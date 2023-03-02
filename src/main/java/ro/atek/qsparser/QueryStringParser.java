@@ -1,0 +1,314 @@
+package ro.atek.qsparser;
+
+import ro.atek.qsparser.decoder.*;
+import ro.atek.qsparser.value.*;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Core parser of the query strings.
+ */
+public class QueryStringParser
+{
+   /** The configuration used by this parser */
+   private final ParserOptions options;
+
+   /**
+    * Basic constructor. This starts with the default configuration.
+    */
+   public QueryStringParser()
+   {
+      this(null);
+   }
+
+   /**
+    * Constructor based on a specified configuration. Don't use this
+    * if you are going to use the default settings anyway.
+    *
+    * @param   options
+    *          The configuration to be used by this parser. {@code null}
+    *          means use the default settings.
+    */
+   public QueryStringParser(ParserOptions options)
+   {
+      this.options = options == null ? new ParserOptions() : options;
+   }
+
+   /**
+    * Core procedure which parses a string representing a query string.
+    *
+    * @param  content
+    *         A string which is expected to be a query string
+    *
+    * @return An internal representation of the query string.
+    */
+   public Value parse(String content)
+   {
+      if (content == null || content.isEmpty())
+      {
+         return options.plainObjects ? null : new DictValue();
+      }
+
+      DictValue tmpObj = parseValues(content);
+      Value obj = new DictValue();
+      for (Map.Entry<DictKey, Value> entry : tmpObj.entrySet())
+      {
+         Value newObj = parseKeys(entry.getKey(), entry.getValue());
+         obj = obj.merge(newObj);
+      }
+
+      if (options.allowSparse)
+      {
+         return obj;
+      }
+
+      return obj.compact();
+   }
+
+   /**
+    * Internal parser for the key part. This is complex as it con parse into
+    * a nested succession of dictionaries and arrays. This is also sensitive
+    * to the configuration and its depth and array limits.
+    *
+    * @param   dictKey
+    *          The key to be parsed.
+    * @param   value
+    *          The value to be assigned to the specified key.
+    *
+    * @return  Usually a dictionary with a single key pointing to the specified value.
+    */
+   private Value parseKeys(DictKey dictKey, Value value)
+   {
+      String key = dictKey.toString();
+      if (options.allowDots)
+      {
+         // test.test.test[a][b].c[d]
+         while (key.contains("."))
+         {
+            int idx = key.indexOf(".");
+            String left = key.substring(0, idx);
+            String right = key.substring(idx + 1);
+            int idx1 = right.indexOf("[");
+            int idx2 = right.indexOf(".");
+            if (idx1 == -1 && idx2 == -1) // left.prop
+            {
+               key = left + "[" + right + "]";
+            }
+            else
+            {
+               int till = idx1 == -1 ? idx2 : (idx2 == -1 ? idx1 : Math.min(idx1, idx2));
+               String prop = right.substring(0, till);
+               String rest = right.substring(till);
+               key = left + "[" + prop + "]" + rest;
+            }
+         }
+      }
+
+      int idx = options.depth == 0 ? -1 : key.indexOf("[");
+      String parent = idx != -1 ? key.substring(0, idx) : key;
+      String rest = idx != -1 ? key.substring(idx) : null;
+
+      List<String> keys = new ArrayList<>();
+      if (parent != null && !parent.isEmpty())
+      {
+         keys.add(parent);
+      }
+
+      for (int i = 0; rest != null && rest.startsWith("[") && rest.contains("]") && i < options.depth; i++)
+      {
+         int closeIdx = rest.indexOf("]");
+         String segment = rest.substring(0, closeIdx + 1);
+         keys.add(segment);
+         rest = rest.substring(closeIdx + 1);
+      }
+
+      if (rest != null && !rest.isEmpty())
+      {
+         keys.add("[" + rest + "]");
+      }
+
+      return parseObject(keys, value);
+   }
+
+   /**
+    * Internal helper for the key parser. This takes the split key and
+    * tries to build the nested structure. This doesn't honor the depth
+    * or comma settings.
+    *
+    * @param   chain
+    *          A list of identifiers obtained by splitting the key.
+    * @param   value
+    *          The value to which the final key should be assigned.
+    *
+    * @return  Usually a nested dictionary with the provided keys in the chain
+    *          pointing to the provided value.
+    */
+   private Value parseObject(List<String> chain, Value value)
+   {
+      Value leaf = value;
+      for (int i = chain.size() - 1; i >= 0; i--)
+      {
+         Value obj;
+         String root = chain.get(i);
+         if (root.equals("[]") && options.parseArrays)
+         {
+            obj = leaf instanceof ArrayValue ? leaf : new ArrayValue(new Value[] { leaf });
+         }
+         else
+         {
+            obj = new DictValue();
+            String cleanRoot = root.startsWith("[") && root.endsWith("]") ?
+               root.substring(1, root.length() - 1) :
+               root;
+            boolean failIndex = false;
+            int index = -1;
+            try
+            {
+               index = Integer.parseInt(cleanRoot);
+            }
+            catch (NumberFormatException ignored)
+            {
+               failIndex = true;
+            }
+            if (!options.parseArrays && cleanRoot.isEmpty())
+            {
+               obj = new DictValue().put(IntValue.get(0), leaf);
+            }
+            else if (!failIndex &&
+                     !root.equals(cleanRoot) &&
+                     String.valueOf(index).equals(cleanRoot) &&
+                     index >= 0 &&
+                     (options.parseArrays && index <= options.arrayLimit))
+            {
+               obj = new ArrayValue(index, leaf);
+            }
+            else if (options.parseIntKeys && !failIndex && String.valueOf(index).equals(cleanRoot))
+            {
+               ((DictValue) obj).put(IntValue.get(index), leaf);
+            }
+            else
+            {
+               ((DictValue) obj).put(StringValue.get(cleanRoot), leaf);
+            }
+         }
+         leaf = obj;
+      }
+
+      return leaf;
+   }
+
+   /**
+    * Internal procedure which handles the parsing of the values.
+    * This is does the whole initial heavy-lift as it splits the query string
+    * and tries to identify the entries, honoring any additional markers and decoding.
+    *
+    * @param   content
+    *          A string representing the query string.
+    *
+    * @return  A structured representation of the query string.
+    */
+   private DictValue parseValues(String content)
+   {
+      content = options.ignoreQueryPrefix && content.startsWith("?") ?
+         content.substring(1) :
+         content;
+      String[] parts = content.split(options.delimiter);
+      if (parts.length > options.parameterLimit)
+      {
+         String[] oldParts = parts;
+         parts = new String[options.parameterLimit];
+         System.arraycopy(oldParts, 0, parts, 0, options.parameterLimit);
+      }
+      int skipIndex = -1;
+      Charset charset = options.charset;
+      Decoder decoder = options.decoder;
+      if (options.charsetSentinel)
+      {
+         for (int i = 0; i < parts.length; i++)
+         {
+            if (parts[i].startsWith("utf8="))
+            {
+               if (parts[i].equals("utf8=%E2%9C%93"))
+               {
+                  charset = StandardCharsets.UTF_8;
+               }
+               else if (parts[i].equals("utf8=%26%2310003%3B"))
+               {
+                  charset = StandardCharsets.ISO_8859_1;
+               }
+               skipIndex = i;
+               i = parts.length;
+            }
+         }
+      }
+
+      DictValue root = new DictValue();
+      for (int i = 0; i < parts.length; i++)
+      {
+         if (i == skipIndex)
+         {
+            continue;
+         }
+
+         String part = parts[i];
+         if (part == null || part.trim().isEmpty())
+         {
+            continue;
+         }
+
+         int bracketEqualsPos = part.indexOf("]=");
+         int pos = bracketEqualsPos == -1 ? part.indexOf('=') : bracketEqualsPos + 1;
+
+         String key;
+         Value val;
+         if (pos == -1)
+         {
+            key = decoder.decode(part, charset, Decoder.ContentType.KEY);
+            val = options.strictNullHandling ? NullValue.get() : StringValue.get("");
+         }
+         else
+         {
+            key = decoder.decode(part.substring(0, pos), charset, Decoder.ContentType.KEY);
+
+            String plain = part.substring(pos + 1);
+            if (options.comma && plain.contains(","))
+            {
+               String[] strs = plain.split(",");
+               StringValue[] svalues = new StringValue[strs.length];
+               for (int j = 0; j < strs.length; j++)
+               {
+                  svalues[j] = StringValue.get(decoder.decode(strs[j], charset, Decoder.ContentType.VALUE));
+               }
+               val = new ArrayValue(svalues);
+            }
+            else
+            {
+               val = StringValue.get(decoder.decode(plain, charset, Decoder.ContentType.VALUE));
+            }
+         }
+
+//         if (val != null && options.interpretNumericEntities && charset == StandardCharsets.ISO_8859_1)
+//         {
+//         }
+//
+//         if (part.contains("[]="))
+//         {
+//         }
+
+         if (root.containsKey(StringValue.get(key)))
+         {
+            root.put(StringValue.get(key), new ArrayValue(root.get(StringValue.get(key)), val));
+         }
+         else
+         {
+            root.put(StringValue.get(key), val);
+         }
+      }
+
+      return root;
+   }
+}
