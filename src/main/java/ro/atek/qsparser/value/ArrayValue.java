@@ -221,4 +221,16 @@ implements Value
       ArrayValue otherArray = (ArrayValue) other;
       return Arrays.equals(values, otherArray.values);
    }
+
+   /**
+    * Implementation of the hash code. This is based on the cumulative
+    * array elements hashes built-in for Java.
+    *
+    * @return   The hash code of this array value.
+    */
+   @Override
+   public int hashCode()
+   {
+      return Arrays.hashCode(this.values);
+   }
 }

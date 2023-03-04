@@ -1,5 +1,6 @@
 package ro.atek.qsparser.value;
 
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -81,6 +82,17 @@ implements Value
       return result;
    }
 
+   /**
+    * Implementation of the equal check. This should return {@code true}
+    * only if the other object is an {@link DictValue} and wraps the
+    * same key-value entries as this is the same order.
+    *
+    * @param    obj
+    *           The other object to be used for the equal check.
+    *
+    * @return   {@code true} only when the other value is an {@link DictValue}
+    *           and wraps a similar dictionary with the same key order.
+    */
    @Override
    public boolean equals(Object obj)
    {
@@ -88,17 +100,34 @@ implements Value
       if (!(obj instanceof DictValue)) return false;
       DictValue other = (DictValue) obj;
       if (other.size() != this.size()) return false;
-      for (Map.Entry<DictKey, Value> entry : this.entrySet())
+      Iterator<Map.Entry<DictKey, Value>> it1 = this.entrySet().iterator();
+      Iterator<Map.Entry<DictKey, Value>> it2 = other.entrySet().iterator();
+      while (it1.hasNext() && it2.hasNext())
       {
-         if (!other.containsKey(entry.getKey())) return false;
-         if (entry.getValue() == null || other.get(entry.getKey()) == null)
+         Map.Entry<DictKey, Value> a = it1.next();
+         Map.Entry<DictKey, Value> b = it2.next();
+
+         if (!a.getKey().equals(b.getKey())) return false;
+         if (a.getValue() == null || b.getValue() == null)
          {
-            if (entry.getValue() != other.get(entry.getKey())) return false;
+            if (a.getValue() != b.getValue()) return false;
             continue;
          }
-         if (!entry.getValue().equals(other.get(entry.getKey()))) return false;
+         if (!a.getValue().equals(b.getValue())) return false;
       }
       return true;
+   }
+
+   /**
+    * Implementation of the hash code. This is based on the cumulative
+    * map elements hashes built-in for Java.
+    *
+    * @return   The hash code of this dictionary value.
+    */
+   @Override
+   public int hashCode()
+   {
+      return super.hashCode();
    }
 
    /**

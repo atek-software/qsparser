@@ -60,4 +60,16 @@ implements Value
    {
       return other == this;
    }
+
+   /**
+    * Implementation of the hash code. This should return a consistent
+    * value as this is a singleton anyway.
+    *
+    * @return   The hash code of a {@code null} value.
+    */
+   @Override
+   public int hashCode()
+   {
+      return super.hashCode();
+   }
 }
