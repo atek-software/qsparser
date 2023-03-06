@@ -47,3 +47,10 @@ Download from the [GitHub Packages](https://github.com/llalexandru00/qsparser/pa
 :warning: The packages are not uploaded to Maven Central yet.
 
 :heavy_exclamation_mark: The packages are uploaded to [GitHub Packages](https://github.com/llalexandru00/qsparser/packages/), so you may need to add the required repository or use [jitpack](https://jitpack.io).
+```xml
+<repository>
+   <id>github</id>
+   <name>GitHub Packages</name>
+   <url>https://maven.pkg.github.com/llalexandru00/qsparser</url>
+</repository>
+```
