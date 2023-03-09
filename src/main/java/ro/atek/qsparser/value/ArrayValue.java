@@ -38,9 +38,11 @@ implements Value
     */
    public ArrayValue(Value a, Value b)
    {
-      Value[] val1 = a instanceof ArrayValue ? ((ArrayValue) a).values : new Value[] { a };
-      Value[] val2 = b instanceof ArrayValue ? ((ArrayValue) b).values : new Value[] { b };
-      values = Stream.concat(Arrays.stream(val1), Arrays.stream(val2)).toArray(Value[]::new);
+      a = a == null ? NullValue.get() : a;
+      b = b == null ? NullValue.get() : b;
+      Value[] val1 = a.getType() == ValueType.ARRAY ? ((ArrayValue) a).values : new Value[] { a };
+      Value[] val2 = b.getType() == ValueType.ARRAY ? ((ArrayValue) b).values : new Value[] { b };
+      this.values = Stream.concat(Arrays.stream(val1), Arrays.stream(val2)).toArray(Value[]::new);
    }
 
    /**
@@ -55,7 +57,7 @@ implements Value
    public ArrayValue(int index, Value value)
    {
       this.values = new Value[index + 1];
-      this.values[index] = value;
+      this.values[index] = value == null ? NullValue.get() : value;
    }
 
    /**
@@ -82,35 +84,36 @@ implements Value
    @Override
    public Value merge(Value value)
    {
-      if (value instanceof StringValue)
+      if (value == null)
       {
-         return new ArrayValue(this, value);
+         return this;
       }
 
-      if (value instanceof DictValue)
+      if (value.getType() == ValueType.DICT)
       {
          return asDictValue().merge(value);
       }
 
-      if (!(value instanceof ArrayValue))
+      if (value.getType() != ValueType.ARRAY)
       {
-         throw new RuntimeException("Not implemented yet!");
+         return new ArrayValue(this, value);
       }
 
       ArrayValue other = (ArrayValue) value;
       Value[] resultValues = new Value[Math.max(getSize(), other.getSize())];
       System.arraycopy(this.values, 0, resultValues, 0, this.values.length);
 
-      DictValue values = other.asDictValue();
+      DictValue dictValue = other.asDictValue();
       List<Value> extra = new ArrayList<>();
-      for (Map.Entry<DictKey, Value> elem : values.entrySet())
+      for (Map.Entry<DictKey, Value> elem : dictValue.entrySet())
       {
          int key = ((IntValue) elem.getKey()).intern();
          if (resultValues[key] == null)
          {
             resultValues[key] = elem.getValue();
          }
-         else if (elem.getValue() instanceof DictValue && resultValues[key] instanceof DictValue)
+         else if (elem.getValue().getType()   == ValueType.DICT &&
+                  resultValues[key].getType() == ValueType.DICT)
          {
             resultValues[key] = resultValues[key].merge(elem.getValue());
          }
@@ -189,6 +192,17 @@ implements Value
          }
       }
       return new ArrayValue(target.toArray(new Value[0]));
+   }
+
+   /**
+    * Retrieve the value type of this.
+    *
+    * @return   The array type.
+    */
+   @Override
+   public ValueType getType()
+   {
+      return ValueType.ARRAY;
    }
 
    /**

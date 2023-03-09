@@ -10,6 +10,9 @@ public final class StringValue
 implements Value,
            DictKey
 {
+   /** Convenient instance representing the empty string */
+   public static final StringValue EMPTY = new StringValue("");
+
    /** The underlying data of the parsed string value */
    private final String value;
 
@@ -39,26 +42,54 @@ implements Value,
    }
 
    /**
-    * Merge another value with this one. This returns a resulting
-    * value and does not alter the operands. The result depends
-    * on the type of the other value.
-    * <p>
-    * Only merging with an array is possible right now, resulting
-    * in appending this value at the front-end of the array.
+    * Retrieve the internal string value.
     *
-    * @param   value
-    *          Another value to be merged into this.
+    * @return   The string wrapped by this representation.
+    */
+   public String intern()
+   {
+      return value;
+   }
+
+   /**
+    * Retrieve the value type of this.
     *
-    * @return  The result of the merging this with another arbitrary value.
+    * @return   The string type.
     */
    @Override
-   public Value merge(Value value)
+   public ValueType getType()
    {
-      if (!(value instanceof ArrayValue))
+      return ValueType.STRING;
+   }
+
+   /**
+    * Particular use-case in which a value need to be reinterpreted
+    * as a numeric value. This is widely used for strings that look like
+    * plain &#9312; and should be interpreted as a specific symbol.
+    *
+    * @return   The value in which all nested string values are
+    *           reinterpreted based on the detected char code.
+    */
+   public Value interpretAsNumeric()
+   {
+      String str = intern();
+      if (!(str.startsWith("&#") && str.endsWith(";")))
       {
-         throw new RuntimeException("Not implemented yet!");
+         return this;
       }
-      return new ArrayValue(this, value);
+
+      str = str.substring(2, str.length() - 1);
+      try
+      {
+         int idx = Integer.parseInt(str);
+         return StringValue.get("" + Character.toChars(idx)[0]);
+      }
+      catch (NumberFormatException e)
+      {
+         // let it be
+      }
+
+      return this;
    }
 
    /**

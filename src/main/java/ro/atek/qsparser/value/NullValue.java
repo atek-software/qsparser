@@ -34,6 +34,17 @@ implements Value
    }
 
    /**
+    * Retrieve the value type of this.
+    *
+    * @return   The null type.
+    */
+   @Override
+   public ValueType getType()
+   {
+      return ValueType.NULL;
+   }
+
+   /**
     * Convenient representation of this value.
     *
     * @return  Simply "null".

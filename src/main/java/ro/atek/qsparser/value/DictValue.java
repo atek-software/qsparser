@@ -35,16 +35,31 @@ implements Value
     *
     * @return  The result after merging another value into this dictionary.
     */
+   @Override
    public Value merge(Value value)
    {
-      if (value instanceof ArrayValue)
+      if (value == null)
+      {
+         return this;
+      }
+
+      if (value.getType() == ValueType.ARRAY)
       {
          return merge(((ArrayValue) value).asDictValue());
       }
 
-      if (!(value instanceof DictValue))
+      if (value.getType() != ValueType.DICT)
       {
-         throw new RuntimeException("Not implemented yet!");
+         if (value instanceof DictKey)
+         {
+            DictValue result = new DictValue();
+            result.putAll(this);
+            return result.append((DictKey) value, BoolValue.TRUE);
+         }
+         else
+         {
+            return new ArrayValue(this, value);
+         }
       }
 
       DictValue other = (DictValue) value;
@@ -71,6 +86,7 @@ implements Value
     *
     * @return   Another dictionary value storing
     */
+   @Override
    public DictValue compact()
    {
       DictValue result = new DictValue();
@@ -80,6 +96,17 @@ implements Value
          result.replace(entry.getKey(), entry.getValue() == null ? null : entry.getValue().compact());
       }
       return result;
+   }
+
+   /**
+    * Retrieve the value type of this.
+    *
+    * @return   The dictionary type.
+    */
+   @Override
+   public ValueType getType()
+   {
+      return ValueType.DICT;
    }
 
    /**
@@ -167,7 +194,7 @@ implements Value
             sb.append("NaN\n");
             continue;
          }
-         if (entry.getValue() instanceof DictValue)
+         if (entry.getValue().getType() == ValueType.DICT)
          {
             // make it aware of ident
             sb.append(((DictValue) entry.getValue()).toString(ident));
@@ -204,7 +231,7 @@ implements Value
     */
    public DictValue append(DictKey key, Value value)
    {
-      put(key, value);
+      put(key, value == null ? NullValue.get() : value);
       return this;
    }
 }

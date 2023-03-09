@@ -12,6 +12,17 @@ import java.nio.charset.Charset;
 public class DefaultDecoder
 implements Decoder
 {
+   /** Convenient singleton */
+   public static final DefaultDecoder DEFAULT_DECODER = new DefaultDecoder();
+
+   /**
+    * Private constructor.
+    */
+   private DefaultDecoder()
+   {
+
+   }
+
    /**
     * The core method of decoding parsed strings. This uses {@code URLDecoder}.
     *
@@ -38,7 +49,7 @@ implements Decoder
       }
       catch (IllegalArgumentException | UnsupportedEncodingException e)
       {
-         throw new RuntimeException(e);
+         return content;
       }
    }
 }

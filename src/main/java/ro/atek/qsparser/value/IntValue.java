@@ -51,6 +51,17 @@ implements Value,
    }
 
    /**
+    * Retrieve the value type of this.
+    *
+    * @return   The integer type.
+    */
+   @Override
+   public ValueType getType()
+   {
+      return ValueType.INT;
+   }
+
+   /**
     * Convenient representation of this value.
     *
     * @return  Simply the containing int.
