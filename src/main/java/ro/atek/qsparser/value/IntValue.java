@@ -5,8 +5,6 @@ package ro.atek.qsparser.value;
  * of value is used just to allow an automatic parsing of some dictionary
  * keys into integers. This only complicates the dictionary keys, maybe it
  * should be dropped.
- * <p>
- * This value can't be merged into other values.
  */
 public final class IntValue
 implements Value,

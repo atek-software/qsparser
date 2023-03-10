@@ -12,7 +12,7 @@ public final class NullValue
 implements Value
 {
    /** Store one single instance of the null value */
-   private static final NullValue NULL_VALUE = new NullValue();
+   public static final NullValue INSTANCE = new NullValue();
 
    /**
     * Convenient static method to access the singleton value.
@@ -21,7 +21,7 @@ implements Value
     */
    public static NullValue get()
    {
-      return NULL_VALUE;
+      return INSTANCE;
    }
 
    /**

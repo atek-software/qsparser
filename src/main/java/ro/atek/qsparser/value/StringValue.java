@@ -17,14 +17,16 @@ implements Value,
    private final String value;
 
    /**
-    * Basic constructor which wraps a string value.
+    * Basic constructor which wraps a string value. Note that we can't wrap
+    * a null value here, so we implicitly convert it to an empty string.
+    * A null value should be represented using {@link NullValue}
     *
     * @param   value
     *          The string value to be wrapped.
     */
    public StringValue(String value)
    {
-      this.value = value;
+      this.value = value == null ? "" : value;
    }
 
    /**
