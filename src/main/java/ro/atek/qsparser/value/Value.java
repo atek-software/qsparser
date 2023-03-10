@@ -4,8 +4,7 @@ package ro.atek.qsparser.value;
  * General interface for all internal values. To support
  * an internal representation of the query string, we need
  * primitive values like string and integer. Also, we need
- * compound values like arrays and dictionaries. This should
- * be immutable.
+ * compound values like arrays and dictionaries.
  */
 public interface Value
 {
@@ -24,7 +23,11 @@ public interface Value
     */
    default Value merge(Value other)
    {
-      throw new RuntimeException("Can't merge " + this + " with " + other);
+      if (other == null)
+      {
+         return this;
+      }
+      return new ArrayValue(this, other);
    }
 
    /**
@@ -35,6 +38,26 @@ public interface Value
     * @return   The resulting value after compact.
     */
    default Value compact()
+   {
+      return this;
+   }
+
+   /**
+    * Retrieve the value type of this.
+    *
+    * @return   The value type of the representation.
+    */
+   ValueType getType();
+
+   /**
+    * Particular use-case in which a value need to be reinterpreted
+    * as a numeric value. This is widely used for strings that look like
+    * plain &#9312; and should be interpreted as a specific symbol.
+    *
+    * @return   The value in which all nested string values are
+    *           reinterpreted based on the detected char code.
+    */
+   default Value interpretAsNumeric()
    {
       return this;
    }

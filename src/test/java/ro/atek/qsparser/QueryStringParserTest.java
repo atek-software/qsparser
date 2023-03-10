@@ -1,22 +1,22 @@
 package ro.atek.qsparser;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import ro.atek.qsparser.value.ArrayValue;
-import ro.atek.qsparser.value.DictValue;
-import ro.atek.qsparser.value.IntValue;
-import ro.atek.qsparser.value.StringValue;
-import ro.atek.qsparser.value.NullValue;
-import ro.atek.qsparser.value.Value;
+import ro.atek.qsparser.decoder.Decoder;
+import ro.atek.qsparser.decoder.DefaultDecoder;
+import ro.atek.qsparser.value.*;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 
 class QueryStringParserTest
 {
    @Test
-   public void parse_a_simple_string()
+   void parse_a_simple_string()
    {
       QueryStringParser parser = new QueryStringParser();
-      QueryStringParser parserSNH = new QueryStringParser(new ParserOptions().strictNullHandling(true));
+      QueryStringParser parserSNH = new QueryStringParser(new ParserOptions().setStrictNullHandling(true));
 
       Assertions.assertEquals(parser.parse("0=foo"),
                               new DictValue().append(IntValue.get(0), StringValue.get("foo")));
@@ -66,7 +66,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void arrays_on_the_same_key()
+   void arrays_on_the_same_key()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("a[]=b&a[]=c"),
@@ -92,10 +92,10 @@ class QueryStringParserTest
    }
 
    @Test
-   public void allow_dot_notation()
+   void allow_dot_notation()
    {
       QueryStringParser parser = new QueryStringParser();
-      QueryStringParser parserAD = new QueryStringParser(new ParserOptions().allowDots(true));
+      QueryStringParser parserAD = new QueryStringParser(new ParserOptions().setAllowDots(true));
       Assertions.assertEquals(parser.parse("a.b=c"),
                               new DictValue().append(StringValue.get("a.b"), StringValue.get("c")));
       Assertions.assertEquals(parserAD.parse("a.b=c"),
@@ -105,11 +105,11 @@ class QueryStringParserTest
    }
 
    @Test
-   public void depth_parsing()
+   void depth_parsing()
    {
       QueryStringParser parser = new QueryStringParser();
-      QueryStringParser parserD1 = new QueryStringParser(new ParserOptions().depth(1));
-      QueryStringParser parserD0 = new QueryStringParser(new ParserOptions().depth(0));
+      QueryStringParser parserD1 = new QueryStringParser(new ParserOptions().setDepth(1));
+      QueryStringParser parserD0 = new QueryStringParser(new ParserOptions().setDepth(0));
       Assertions.assertEquals(parser.parse("a[b]=c"),
                               new DictValue().append(StringValue.get("a"),
                                                      new DictValue().append(StringValue.get("b"),
@@ -148,7 +148,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void parses_an_explicit_array()
+   void parses_an_explicit_array()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("a[]=b"),
@@ -165,11 +165,11 @@ class QueryStringParserTest
    }
 
    @Test
-   public void parses_a_mix_of_simple_and_explicit_arrays()
+   void parses_a_mix_of_simple_and_explicit_arrays()
    {
       QueryStringParser parser = new QueryStringParser();
-      QueryStringParser parser20 = new QueryStringParser(new ParserOptions().arrayLimit(20));
-      QueryStringParser parser0 = new QueryStringParser(new ParserOptions().arrayLimit(0));
+      QueryStringParser parser20 = new QueryStringParser(new ParserOptions().setArrayLimit(20));
+      QueryStringParser parser0 = new QueryStringParser(new ParserOptions().setArrayLimit(0));
       Assertions.assertEquals(parser.parse("a=b&a[]=c"),
                               new DictValue().append(StringValue.get("a"),
                                                      new ArrayValue(new Value[] { StringValue.get("b"),
@@ -213,7 +213,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void parses_a_nested_array()
+   void parses_a_nested_array()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("a[b][]=c&a[b][]=d"),
@@ -228,11 +228,11 @@ class QueryStringParserTest
    }
 
    @Test
-   public void allows_to_specify_array_indices()
+   void allows_to_specify_array_indices()
    {
       QueryStringParser parser = new QueryStringParser();
-      QueryStringParser parser20 = new QueryStringParser(new ParserOptions().arrayLimit(20));
-      QueryStringParser parser0 = new QueryStringParser(new ParserOptions().arrayLimit(0));
+      QueryStringParser parser20 = new QueryStringParser(new ParserOptions().setArrayLimit(20));
+      QueryStringParser parser0 = new QueryStringParser(new ParserOptions().setArrayLimit(0));
       Assertions.assertEquals(parser.parse("a[1]=c&a[0]=b&a[2]=d"),
                               new DictValue().append(StringValue.get("a"),
                                                      new ArrayValue(new Value[] { StringValue.get("b"),
@@ -255,10 +255,10 @@ class QueryStringParserTest
    }
 
    @Test
-   public void limits_specific_array_indices_to_arrayLimit()
+   void limits_specific_array_indices_to_arrayLimit()
    {
       QueryStringParser parser = new QueryStringParser();
-      QueryStringParser parser20 = new QueryStringParser(new ParserOptions().arrayLimit(20));
+      QueryStringParser parser20 = new QueryStringParser(new ParserOptions().setArrayLimit(20));
       Assertions.assertEquals(parser20.parse("a[20]=a"),
                               new DictValue().append(StringValue.get("a"),
                                                      new ArrayValue(new Value[] { StringValue.get("a") })));
@@ -276,7 +276,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void supports_keys_that_begin_with_a_number()
+   void supports_keys_that_begin_with_a_number()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("a[12b]=c"),
@@ -285,7 +285,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void supports_encoded_equal_signs()
+   void supports_encoded_equal_signs()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("he%3Dllo=th%3Dere"),
@@ -294,7 +294,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void is_ok_with_url_encoded_strings()
+   void is_ok_with_url_encoded_strings()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("a[b%20c]=d"),
@@ -308,7 +308,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void allows_brackets_in_the_value()
+   void allows_brackets_in_the_value()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("pets=[\"tobi\"]"),
@@ -320,7 +320,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void allows_empty_values()
+   void allows_empty_values()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse(""), new DictValue());
@@ -328,7 +328,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void transforms_arrays_to_objects()
+   void transforms_arrays_to_objects()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("foo[0]=bar&foo[bad]=baz"),
@@ -378,9 +378,9 @@ class QueryStringParserTest
    }
 
    @Test
-   public void transforms_arrays_to_objects_dot_notation()
+   void transforms_arrays_to_objects_dot_notation()
    {
-      QueryStringParser parser = new QueryStringParser(new ParserOptions().allowDots(true));
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setAllowDots(true));
       Assertions.assertEquals(parser.parse("foo[0].baz=bar&fool.bad=baz"),
                               new DictValue().append(StringValue.get("foo"),
                                                      new ArrayValue(new Value[] {
@@ -465,7 +465,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void correctly_prunes_undefined_values()
+   void correctly_prunes_undefined_values()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("a[2]=b&a[99999999]=c"),
@@ -477,11 +477,10 @@ class QueryStringParserTest
    }
 
    @Test
-   @Disabled
-   public void supports_malformed_uri_characters()
+   void supports_malformed_uri_characters()
    {
       QueryStringParser parser = new QueryStringParser();
-      QueryStringParser parserSNH = new QueryStringParser(new ParserOptions().strictNullHandling(true));
+      QueryStringParser parserSNH = new QueryStringParser(new ParserOptions().setStrictNullHandling(true));
       Assertions.assertEquals(parserSNH.parse("{%:%}"),
                               new DictValue().append(StringValue.get("{%:%}"),
                                                      NullValue.get()));
@@ -494,7 +493,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void does_not_produce_empty_keys()
+   void does_not_produce_empty_keys()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("_r=1&"),
@@ -503,7 +502,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void parses_arrays_of_objects()
+   void parses_arrays_of_objects()
    {
       QueryStringParser parser = new QueryStringParser();
       Assertions.assertEquals(parser.parse("a[][b]=c"),
@@ -519,13 +518,13 @@ class QueryStringParserTest
    }
 
    @Test
-   public void allows_for_empty_strings_in_arrays()
+   void allows_for_empty_strings_in_arrays()
    {
       QueryStringParser parser = new QueryStringParser();
-      QueryStringParser parserSNH20 = new QueryStringParser(new ParserOptions().strictNullHandling(true)
-                                                                               .arrayLimit(20));
-      QueryStringParser parserSNH0 = new QueryStringParser(new ParserOptions().strictNullHandling(true)
-                                                                               .arrayLimit(0));
+      QueryStringParser parserSNH20 = new QueryStringParser(new ParserOptions().setStrictNullHandling(true)
+                                                                               .setArrayLimit(20));
+      QueryStringParser parserSNH0 = new QueryStringParser(new ParserOptions().setStrictNullHandling(true)
+                                                                               .setArrayLimit(0));
       Assertions.assertEquals(parser.parse("a[]=b&a[]=&a[]=c"),
                               new DictValue().append(StringValue.get("a"),
                                                      new ArrayValue(new Value[]{ StringValue.get("b"),
@@ -558,9 +557,9 @@ class QueryStringParserTest
    }
 
    @Test
-   public void compacts_sparse_arrays()
+   void compacts_sparse_arrays()
    {
-      QueryStringParser parser = new QueryStringParser(new ParserOptions().arrayLimit(20));
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setArrayLimit(20));
       Assertions.assertEquals(parser.parse("a[10]=1&a[2]=2"),
                               new DictValue().append(StringValue.get("a"),
                                                      new ArrayValue(new Value[]{ StringValue.get("2"),
@@ -590,9 +589,9 @@ class QueryStringParserTest
    }
 
    @Test
-   public void parses_sparse_arrays()
+   void parses_sparse_arrays()
    {
-      QueryStringParser parser = new QueryStringParser(new ParserOptions().allowSparse(true));
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setAllowSparse(true));
       Assertions.assertEquals(parser.parse("a[4]=1&a[1]=2"),
                               new DictValue().append(StringValue.get("a"),
                                       new ArrayValue(new Value[]{
@@ -621,7 +620,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void parses_jquery_param_strings()
+   void parses_jquery_param_strings()
    {
       QueryStringParser parser = new QueryStringParser();
       // filter[0][]=int1&filter[0][]==&filter[0][]=77&filter[]=and&
@@ -641,10 +640,10 @@ class QueryStringParserTest
    }
 
    @Test
-   public void continues_parsing_when_no_parent_is_found()
+   void continues_parsing_when_no_parent_is_found()
    {
       QueryStringParser parser = new QueryStringParser();
-      QueryStringParser parserSNH = new QueryStringParser(new ParserOptions().strictNullHandling(true));
+      QueryStringParser parserSNH = new QueryStringParser(new ParserOptions().setStrictNullHandling(true));
       Assertions.assertEquals(parser.parse("[]=&a=b"),
                               new DictValue().append(IntValue.get(0),
                                                      StringValue.get(""))
@@ -659,7 +658,7 @@ class QueryStringParserTest
    }
 
    @Test
-   public void does_not_error_when_parsing_a_very_long_array()
+   void does_not_error_when_parsing_a_very_long_array()
    {
       QueryStringParser parser = new QueryStringParser();
       StringBuilder atom = new StringBuilder("a[] = a");
@@ -671,10 +670,10 @@ class QueryStringParserTest
    }
 
    @Test
-   public void parses_a_string_with_an_alternative_string_delimiter()
+   void parses_a_string_with_an_alternative_string_delimiter()
    {
-      QueryStringParser parser = new QueryStringParser(new ParserOptions().delimiter(";"));
-      QueryStringParser parser2 = new QueryStringParser(new ParserOptions().delimiter("[;,] *"));
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setDelimiter(";"));
+      QueryStringParser parser2 = new QueryStringParser(new ParserOptions().setDelimiter("[;,] *"));
       Assertions.assertEquals(parser.parse("a=b;c=d"),
                               new DictValue().append(StringValue.get("a"), StringValue.get("b"))
                                              .append(StringValue.get("c"), StringValue.get("d")));
@@ -684,17 +683,21 @@ class QueryStringParserTest
    }
 
    @Test
-   public void allows_overriding_parameter_limit()
+   void allows_overriding_parameter_limit()
    {
-      QueryStringParser parser = new QueryStringParser(new ParserOptions().parameterLimit(1));
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setParameterLimit(1));
+      QueryStringParser parser2 = new QueryStringParser(new ParserOptions().setParameterLimit(Integer.MAX_VALUE));
       Assertions.assertEquals(parser.parse("a=b&c=d"),
                               new DictValue().append(StringValue.get("a"), StringValue.get("b")));
+      Assertions.assertEquals(parser2.parse("a=b&c=d"),
+                              new DictValue().append(StringValue.get("a"), StringValue.get("b"))
+                                             .append(StringValue.get("c"), StringValue.get("d")));
    }
 
    @Test
-   public void allows_overriding_array_limit()
+   void allows_overriding_array_limit()
    {
-      QueryStringParser parser = new QueryStringParser(new ParserOptions().arrayLimit(-1));
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setArrayLimit(-1));
       Assertions.assertEquals(parser.parse("a[0]=b"),
                               new DictValue().append(StringValue.get("a"),
                                                      new DictValue().append(IntValue.get(0),
@@ -709,5 +712,302 @@ class QueryStringParserTest
                                                                             StringValue.get("b"))
                                                                     .append(IntValue.get(1),
                                                                             StringValue.get("c"))));
+   }
+
+   @Test
+   void allows_disabling_array_parsing()
+   {
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setParseArrays(false));
+      Assertions.assertEquals(parser.parse("a[0]=b&a[1]=c"),
+                              new DictValue().append(StringValue.get("a"),
+                                                     new DictValue().append(IntValue.get(0),
+                                                                            StringValue.get("b"))
+                                                                    .append(IntValue.get(1),
+                                                                            StringValue.get("c"))));
+      Assertions.assertEquals(parser.parse("a[]=b"),
+                              new DictValue().append(StringValue.get("a"),
+                                                     new DictValue().append(IntValue.get(0),
+                                                                            StringValue.get("b"))));
+   }
+
+   @Test
+   void allows_for_query_string_prefix()
+   {
+      QueryStringParser parseriqf = new QueryStringParser(new ParserOptions().setIgnoreQueryPrefix(true));
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setIgnoreQueryPrefix(false));
+      Assertions.assertEquals(parseriqf.parse("?foo=bar"),
+                              new DictValue().append(StringValue.get("foo"), StringValue.get("bar")));
+      Assertions.assertEquals(parseriqf.parse("foo=bar"),
+                              new DictValue().append(StringValue.get("foo"), StringValue.get("bar")));
+      Assertions.assertEquals(parser.parse("?foo=bar"),
+                              new DictValue().append(StringValue.get("?foo"), StringValue.get("bar")));
+   }
+
+   @Test
+   void parses_string_with_comma_as_array_divider()
+   {
+      QueryStringParser simpleParser = new QueryStringParser();
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setComma(true));
+      QueryStringParser parserSNH = new QueryStringParser(
+         new ParserOptions().setComma(true).setStrictNullHandling(true));
+      Assertions.assertEquals(parser.parse("foo=bar,tee"),
+                              new DictValue().append(StringValue.get("foo"), new ArrayValue(new Value[] {
+                                 StringValue.get("bar"),
+                                 StringValue.get("tee")})));
+      Assertions.assertEquals(parser.parse("foo[bar]=coffee,tee"),
+                              new DictValue().append(StringValue.get("foo"),
+                                   new DictValue().append(StringValue.get("bar"), new ArrayValue(new Value[] {
+                                       StringValue.get("coffee"),
+                                       StringValue.get("tee")}))));
+      Assertions.assertEquals(parser.parse("foo="),
+                              new DictValue().append(StringValue.get("foo"), StringValue.EMPTY));
+      Assertions.assertEquals(parser.parse("foo"),
+                              new DictValue().append(StringValue.get("foo"), StringValue.EMPTY));
+      Assertions.assertEquals(parserSNH.parse("foo"),
+                              new DictValue().append(StringValue.get("foo"), NullValue.get()));
+
+      Assertions.assertEquals(simpleParser.parse("a[0]=c"),
+                              new DictValue().append(StringValue.get("a"),
+                                                     new ArrayValue(new Value[] { StringValue.get("c") })));
+      Assertions.assertEquals(simpleParser.parse("a[]=c"),
+                              new DictValue().append(StringValue.get("a"),
+                                                     new ArrayValue(new Value[] { StringValue.get("c") })));
+      Assertions.assertEquals(parser.parse("a[]=c"),
+                              new DictValue().append(StringValue.get("a"),
+                                                     new ArrayValue(new Value[] { StringValue.get("c") })));
+
+      Assertions.assertEquals(simpleParser.parse("a[0]=c&a[1]=d"),
+                              new DictValue().append(StringValue.get("a"),
+                                                     new ArrayValue(new Value[] { StringValue.get("c"),
+                                                     StringValue.get("d") })));
+      Assertions.assertEquals(simpleParser.parse("a[]=c&a[]=d"),
+                              new DictValue().append(StringValue.get("a"),
+                                                     new ArrayValue(new Value[] { StringValue.get("c"),
+                                                        StringValue.get("d") })));
+      Assertions.assertEquals(parser.parse("a[]=c&a[]=d"),
+                              new DictValue().append(StringValue.get("a"),
+                                                     new ArrayValue(new Value[] { StringValue.get("c"),
+                                                        StringValue.get("d") })));
+   }
+
+   @Test
+   void use_number_decoder()
+   {
+      Decoder decoder = (content, charset, type) ->
+      {
+         try
+         {
+            int value = Integer.parseInt(content);
+            return "[" + value + "]";
+         }
+         catch (NumberFormatException e)
+         {
+            return DefaultDecoder.DEFAULT_DECODER.decode(content, charset, type);
+         }
+      };
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setDecoder(decoder));
+      Assertions.assertEquals(parser.parse("foo=1"),
+                              new DictValue().append(StringValue.get("foo"), StringValue.get("[1]")));
+      Assertions.assertEquals(parser.parse("foo=1.0"),
+                              new DictValue().append(StringValue.get("foo"), StringValue.get("1.0")));
+      Assertions.assertEquals(parser.parse("foo=0"),
+                              new DictValue().append(StringValue.get("foo"), StringValue.get("[0]")));
+   }
+
+   @Test
+   void parses_comma_delimited_array()
+   {
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setComma(true));
+      Assertions.assertEquals(parser.parse("foo=a%2Cb"),
+                              new DictValue().append(StringValue.get("foo"), StringValue.get("a,b")));
+      Assertions.assertEquals(parser.parse("foo=a%2C%20b,d"),
+                              new DictValue().append(StringValue.get("foo"), new ArrayValue(new Value[] {
+                                 StringValue.get("a, b"), StringValue.get("d")})));
+      Assertions.assertEquals(parser.parse("foo=a%2C%20b,c%2C%20d"),
+                              new DictValue().append(StringValue.get("foo"), new ArrayValue(new Value[] {
+                                 StringValue.get("a, b"), StringValue.get("c, d")})));
+   }
+
+
+   @Test
+   void does_not_crash_when_parsing_deep_objects()
+   {
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setDepth(5000));
+      StringBuilder str = new StringBuilder("foo");
+      for (int i = 0; i < 5000; i++)
+      {
+         str.append("[p]");
+      }
+      str.append("=bar");
+      Value[] val = new Value[1];
+      Assertions.assertDoesNotThrow(() -> val[0] = parser.parse(str.toString()));
+      int depth = 0;
+      StringValue key = StringValue.get("p");
+      Assertions.assertInstanceOf(DictValue.class, val[0]);
+      Assertions.assertTrue(((DictValue) val[0]).containsKey(StringValue.get("foo")));
+      val[0] = ((DictValue) val[0]).get(StringValue.get("foo"));
+      while (val[0].getType() == ValueType.DICT && ((DictValue) val[0]).containsKey(key))
+      {
+         val[0] = ((DictValue) val[0]).get(key);
+         depth++;
+      }
+      Assertions.assertEquals(depth, 5000);
+   }
+
+   @Test
+   void params_starting_with_a_closing_bracket()
+   {
+      QueryStringParser parser = new QueryStringParser();
+
+      Assertions.assertEquals(parser.parse("]=toString"),
+                              new DictValue().append(StringValue.get("]"), StringValue.get("toString")));
+      Assertions.assertEquals(parser.parse("]]=toString"),
+                              new DictValue().append(StringValue.get("]]"), StringValue.get("toString")));
+      Assertions.assertEquals(parser.parse("]hello]=toString"),
+                              new DictValue().append(StringValue.get("]hello]"), StringValue.get("toString")));
+   }
+
+   @Test
+   void params_starting_with_a_starting_bracket()
+   {
+      QueryStringParser parser = new QueryStringParser();
+
+      Assertions.assertEquals(parser.parse("[=toString"),
+                              new DictValue().append(StringValue.get("["), StringValue.get("toString")));
+      Assertions.assertEquals(parser.parse("[[=toString"),
+                              new DictValue().append(StringValue.get("[["), StringValue.get("toString")));
+      Assertions.assertEquals(parser.parse("[hello[=toString"),
+                              new DictValue().append(StringValue.get("[hello["), StringValue.get("toString")));
+   }
+
+   @Test
+   void add_keys_to_objects()
+   {
+      QueryStringParser parser = new QueryStringParser();
+
+      Assertions.assertEquals(parser.parse("a[b]=c&a=d"),
+                              new DictValue().append(StringValue.get("a"), new DictValue().append(
+                                 StringValue.get("b"), StringValue.get("c")
+                              ).append(StringValue.get("d"), BoolValue.TRUE)));
+   }
+
+   @Test
+   void can_parse_with_custom_encoding()
+   {
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setDecoder(
+         (content, charset, type) -> {
+            try
+            {
+               return URLDecoder.decode(content, "Shift-JIS");
+            }
+            catch (UnsupportedEncodingException e)
+            {
+               return content;
+            }
+         }));
+
+      Assertions.assertEquals(parser.parse("%8c%a7=%91%e5%8d%e3%95%7b"),
+                              new DictValue().append(StringValue.get("県"), StringValue.get("大阪府")));
+   }
+
+   @Test
+   void does_not_mutate_the_options()
+   {
+      ParserOptions options = new ParserOptions();
+      ParserOptions options2 = new ParserOptions();
+      QueryStringParser parser = new QueryStringParser(options);
+      parser.parse("a[b]=true");
+      Assertions.assertEquals(options, options2);
+   }
+
+   @Test
+   void parse_other_charset()
+   {
+      QueryStringParser parser = new QueryStringParser(
+         new ParserOptions().setCharset(StandardCharsets.ISO_8859_1));
+      Assertions.assertEquals(parser.parse("%A2=%BD"),
+                              new DictValue().append(StringValue.get("¢"), StringValue.get("½")));
+   }
+
+   @Test
+   void parse_charset_sentinel()
+   {
+      String urlEncodedCheckmarkInUtf8 = "%E2%9C%93";
+      String urlEncodedOSlashInUtf8 = "%C3%B8";
+      String urlEncodedNumCheckmark = "%26%2310003%3B";
+
+      QueryStringParser parser = new QueryStringParser(
+         new ParserOptions().setCharsetSentinel(true).setCharset(StandardCharsets.ISO_8859_1));
+      QueryStringParser parserutf8 = new QueryStringParser(
+         new ParserOptions().setCharsetSentinel(true).setCharset(StandardCharsets.UTF_8));
+      QueryStringParser parserdefault = new QueryStringParser(
+         new ParserOptions().setCharsetSentinel(true));
+      Assertions.assertEquals(parser.parse("utf8=" + urlEncodedCheckmarkInUtf8 + "&" +
+                                              urlEncodedOSlashInUtf8 + "=" + urlEncodedOSlashInUtf8),
+                              new DictValue().append(StringValue.get("ø"), StringValue.get("ø")));
+      Assertions.assertEquals(parserutf8.parse("utf8=" + urlEncodedNumCheckmark + "&" +
+                                              urlEncodedOSlashInUtf8 + "=" + urlEncodedOSlashInUtf8),
+                              new DictValue().append(StringValue.get("Ã¸"), StringValue.get("Ã¸")));
+      Assertions.assertEquals(parserutf8.parse("a=" + urlEncodedOSlashInUtf8 + "&utf8=" +
+                                                  urlEncodedNumCheckmark),
+                              new DictValue().append(StringValue.get("a"), StringValue.get("Ã¸")));
+      Assertions.assertEquals(parserutf8.parse("utf8=foo&" + urlEncodedOSlashInUtf8 + "=" +
+                                                  urlEncodedOSlashInUtf8),
+                              new DictValue().append(StringValue.get("ø"), StringValue.get("ø")));
+      Assertions.assertEquals(parserdefault.parse("utf8=" + urlEncodedCheckmarkInUtf8 + "&" +
+                                                  urlEncodedOSlashInUtf8 + "=" + urlEncodedOSlashInUtf8),
+                              new DictValue().append(StringValue.get("ø"), StringValue.get("ø")));
+      Assertions.assertEquals(parserdefault.parse("utf8=" + urlEncodedNumCheckmark + "&" +
+                                                     urlEncodedOSlashInUtf8 + "=" + urlEncodedOSlashInUtf8),
+                              new DictValue().append(StringValue.get("Ã¸"), StringValue.get("Ã¸")));
+   }
+
+   @Test
+   void interpret_numeric_entities()
+   {
+      String urlEncodedNumSmiley = "%26%239786%3B";
+
+      QueryStringParser parser = new QueryStringParser(
+         new ParserOptions().setCharset(StandardCharsets.ISO_8859_1));
+      QueryStringParser parserISO = new QueryStringParser(
+         new ParserOptions().setCharset(StandardCharsets.ISO_8859_1).setInterpretNumericEntities(true));
+      QueryStringParser parserUTF = new QueryStringParser(
+         new ParserOptions().setCharset(StandardCharsets.UTF_8).setInterpretNumericEntities(true));
+      Assertions.assertEquals(parserISO.parse("foo=" + urlEncodedNumSmiley),
+                              new DictValue().append(StringValue.get("foo"), StringValue.get("☺")));
+      Assertions.assertEquals(parser.parse("foo=" + urlEncodedNumSmiley),
+                              new DictValue().append(StringValue.get("foo"), StringValue.get("&#9786;")));
+      Assertions.assertEquals(parserUTF.parse("foo=" + urlEncodedNumSmiley),
+                              new DictValue().append(StringValue.get("foo"), StringValue.get("&#9786;")));
+   }
+
+   @Test
+   void allow_for_decoding_keys_and_values()
+   {
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setDecoder(
+         (content, charset, type) -> {
+            if (type == Decoder.ContentType.KEY)
+               return DefaultDecoder.DEFAULT_DECODER.decode(content.toLowerCase(), charset, type);
+            else
+               return DefaultDecoder.DEFAULT_DECODER.decode(content.toUpperCase(), charset, type);
+         }));
+      Assertions.assertEquals(parser.parse("KeY=vAlUe"), new DictValue().append(
+         StringValue.get("key"), StringValue.get("VALUE")));
+   }
+
+   @Test
+   void proof_of_concept()
+   {
+      QueryStringParser parser = new QueryStringParser();
+      Assertions.assertEquals(parser.parse("filters[name][:eq]=John&filters[age][:ge]=18&filters[age][:le]=60"),
+                              new DictValue().append(StringValue.get("filters"),
+                                new DictValue().append(StringValue.get("name"),
+                                                       new DictValue().append(StringValue.get(":eq"),
+                                                                              StringValue.get("John")))
+                                               .append(StringValue.get("age"),
+                                                       new DictValue().append(StringValue.get(":ge"),
+                                                                              StringValue.get("18"))
+                                                                      .append(StringValue.get(":le"),
+                                                                              StringValue.get("60")))));
    }
 }

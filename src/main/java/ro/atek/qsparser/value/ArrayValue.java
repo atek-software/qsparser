@@ -1,6 +1,7 @@
 package ro.atek.qsparser.value;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -9,10 +10,19 @@ import java.util.stream.Stream;
  * requires.
  */
 public final class ArrayValue
+extends ArrayList<Value>
 implements Value
 {
-   /** The underlying data of the array */
-   private final Value[] values;
+   /**
+    * Wrapper constructor
+    *
+    * @param  values
+    *         The values to be wrapped by thia array value.
+    */
+   public ArrayValue(List<Value> values)
+   {
+      super(values);
+   }
 
    /**
     * Wrapper constructor
@@ -22,7 +32,7 @@ implements Value
     */
    public ArrayValue(Value[] values)
    {
-      this.values = values;
+      Collections.addAll(this, values);
    }
 
    /**
@@ -38,9 +48,11 @@ implements Value
     */
    public ArrayValue(Value a, Value b)
    {
-      Value[] val1 = a instanceof ArrayValue ? ((ArrayValue) a).values : new Value[] { a };
-      Value[] val2 = b instanceof ArrayValue ? ((ArrayValue) b).values : new Value[] { b };
-      values = Stream.concat(Arrays.stream(val1), Arrays.stream(val2)).toArray(Value[]::new);
+      a = a == null ? NullValue.get() : a;
+      b = b == null ? NullValue.get() : b;
+      Value[] val1 = a.getType() == ValueType.ARRAY ? ((ArrayValue) a).toArray(new Value[0]) : new Value[] { a };
+      Value[] val2 = b.getType() == ValueType.ARRAY ? ((ArrayValue) b).toArray(new Value[0]) : new Value[] { b };
+      this.addAll(Stream.concat(Arrays.stream(val1), Arrays.stream(val2)).collect(Collectors.toList()));
    }
 
    /**
@@ -54,8 +66,9 @@ implements Value
     */
    public ArrayValue(int index, Value value)
    {
-      this.values = new Value[index + 1];
-      this.values[index] = value;
+      this(new Value[index + 1]);
+//      this.values = new Value[index + 1];
+      this.set(index, value == null ? NullValue.get() : value);
    }
 
    /**
@@ -82,53 +95,45 @@ implements Value
    @Override
    public Value merge(Value value)
    {
-      if (value instanceof StringValue)
+      if (value == null)
       {
-         return new ArrayValue(this, value);
+         return this;
       }
 
-      if (value instanceof DictValue)
+      if (value.getType() == ValueType.DICT)
       {
          return asDictValue().merge(value);
       }
 
-      if (!(value instanceof ArrayValue))
+      if (value.getType() != ValueType.ARRAY)
       {
-         throw new RuntimeException("Not implemented yet!");
+         return new ArrayValue(this, value);
       }
-
       ArrayValue other = (ArrayValue) value;
-      Value[] resultValues = new Value[Math.max(getSize(), other.getSize())];
-      System.arraycopy(this.values, 0, resultValues, 0, this.values.length);
+      List<Value> newValues = new ArrayList<>(this);
 
-      DictValue values = other.asDictValue();
-      List<Value> extra = new ArrayList<>();
-      for (Map.Entry<DictKey, Value> elem : values.entrySet())
+      for (int i = 0; i < other.size(); i++)
       {
-         int key = ((IntValue) elem.getKey()).intern();
-         if (resultValues[key] == null)
+         if (i < newValues.size() && newValues.get(i) != null)
          {
-            resultValues[key] = elem.getValue();
-         }
-         else if (elem.getValue() instanceof DictValue && resultValues[key] instanceof DictValue)
-         {
-            resultValues[key] = resultValues[key].merge(elem.getValue());
+            if (other.get(i) != null && other.get(i).getType() == ValueType.DICT &&
+               newValues.get(i).getType() == ValueType.DICT)
+            {
+               newValues.set(i, newValues.get(i).merge(other.get(i)));
+            }
+            else
+            {
+               newValues.add(other.get(i));
+            }
          }
          else
          {
-            extra.add(elem.getValue());
+            while (newValues.size() <= i) newValues.add(null);
+            newValues.set(i, other.get(i));
          }
       }
 
-      Value[] oldValues = resultValues;
-      resultValues = new Value[oldValues.length + extra.size()];
-      System.arraycopy(oldValues, 0, resultValues, 0, oldValues.length);
-      for (int i = oldValues.length; i < resultValues.length; i++)
-      {
-         resultValues[i] = extra.get(i - oldValues.length);
-      }
-
-      return new ArrayValue(resultValues);
+      return new ArrayValue(newValues);
    }
 
    /**
@@ -142,31 +147,12 @@ implements Value
    public DictValue asDictValue()
    {
       DictValue dict = new DictValue();
-      for (int i = 0; i < values.length; i++)
+      for (int i = 0; i < size(); i++)
       {
-         if (values[i] == null) continue;
-         dict.put(IntValue.get(i), values[i]);
+         if (get(i) == null) continue;
+         dict.put(IntValue.get(i), get(i));
       }
       return dict;
-   }
-
-   /**
-    * Retrieve the number of elements from this array.
-    */
-   public int getSize()
-   {
-      return values.length;
-   }
-
-   /**
-    * Retrieve the array underlying this wrapper. In fact, the result
-    * is a copy to keep safe from mutability.
-    *
-    * @return   A clone of the underlying array.
-    */
-   public Value[] intern()
-   {
-      return values.clone();
    }
 
    /**
@@ -181,14 +167,25 @@ implements Value
    public ArrayValue compact()
    {
       List<Value> target = new ArrayList<>();
-      for (Value val : values)
+      for (Value val : this)
       {
          if (val != null)
          {
             target.add(val.compact());
          }
       }
-      return new ArrayValue(target.toArray(new Value[0]));
+      return new ArrayValue(target);
+   }
+
+   /**
+    * Retrieve the value type of this.
+    *
+    * @return   The array type.
+    */
+   @Override
+   public ValueType getType()
+   {
+      return ValueType.ARRAY;
    }
 
    /**
@@ -199,7 +196,7 @@ implements Value
    @Override
    public String toString()
    {
-      return Arrays.toString(values);
+      return "[" + stream().map(Value::toString).collect(Collectors.joining(",")) + "]";
    }
 
    /**
@@ -219,7 +216,21 @@ implements Value
       if (this == other) return true;
       if (!(other instanceof ArrayValue)) return false;
       ArrayValue otherArray = (ArrayValue) other;
-      return Arrays.equals(values, otherArray.values);
+      if (this.size() != otherArray.size()) return false;
+      for (int i = 0; i < this.size(); i++)
+      {
+         if (get(i) == null || otherArray.get(i) == null)
+         {
+            if (get(i) != otherArray.get(i))
+               return false;
+            continue;
+         }
+         if (!get(i).equals(otherArray.get(i)))
+         {
+            return false;
+         }
+      }
+      return true;
    }
 
    /**
@@ -231,6 +242,6 @@ implements Value
    @Override
    public int hashCode()
    {
-      return Arrays.hashCode(this.values);
+      return super.hashCode();
    }
 }

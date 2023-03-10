@@ -50,7 +50,7 @@ public class QueryStringParser
    {
       if (content == null || content.isEmpty())
       {
-         return options.plainObjects ? null : new DictValue();
+         return new DictValue();
       }
 
       DictValue tmpObj = parseValues(content);
@@ -86,26 +86,7 @@ public class QueryStringParser
       String key = dictKey.toString();
       if (options.allowDots)
       {
-         // test.test.test[a][b].c[d]
-         while (key.contains("."))
-         {
-            int idx = key.indexOf(".");
-            String left = key.substring(0, idx);
-            String right = key.substring(idx + 1);
-            int idx1 = right.indexOf("[");
-            int idx2 = right.indexOf(".");
-            if (idx1 == -1 && idx2 == -1) // left.prop
-            {
-               key = left + "[" + right + "]";
-            }
-            else
-            {
-               int till = idx1 == -1 ? idx2 : (idx2 == -1 ? idx1 : Math.min(idx1, idx2));
-               String prop = right.substring(0, till);
-               String rest = right.substring(till);
-               key = left + "[" + prop + "]" + rest;
-            }
-         }
+         key = rewriteDots(key);
       }
 
       int idx = options.depth == 0 ? -1 : key.indexOf("[");
@@ -152,48 +133,46 @@ public class QueryStringParser
       Value leaf = value;
       for (int i = chain.size() - 1; i >= 0; i--)
       {
-         Value obj;
          String root = chain.get(i);
          if (root.equals("[]") && options.parseArrays)
          {
-            obj = leaf instanceof ArrayValue ? leaf : new ArrayValue(new Value[] { leaf });
+            leaf = leaf instanceof ArrayValue ? leaf : new ArrayValue(new Value[] { leaf });
+            continue;
+         }
+
+         Value obj;
+         String cleanRoot = root.startsWith("[") && root.endsWith("]") ?
+            root.substring(1, root.length() - 1) :
+            root;
+         boolean failIndex = false;
+         int index = -1;
+         try
+         {
+            index = Integer.parseInt(cleanRoot);
+         }
+         catch (NumberFormatException ignored)
+         {
+            failIndex = true;
+         }
+         if (!options.parseArrays && cleanRoot.isEmpty())
+         {
+            obj = new DictValue().append(IntValue.get(0), leaf);
+         }
+         else if (!failIndex &&
+                  !root.equals(cleanRoot) &&
+                  String.valueOf(index).equals(cleanRoot) &&
+                  index >= 0 &&
+                  (options.parseArrays && index <= options.arrayLimit))
+         {
+            obj = new ArrayValue(index, leaf);
+         }
+         else if (options.parseIntKeys && !failIndex && String.valueOf(index).equals(cleanRoot))
+         {
+            obj = new DictValue().append(IntValue.get(index), leaf);
          }
          else
          {
-            obj = new DictValue();
-            String cleanRoot = root.startsWith("[") && root.endsWith("]") ?
-               root.substring(1, root.length() - 1) :
-               root;
-            boolean failIndex = false;
-            int index = -1;
-            try
-            {
-               index = Integer.parseInt(cleanRoot);
-            }
-            catch (NumberFormatException ignored)
-            {
-               failIndex = true;
-            }
-            if (!options.parseArrays && cleanRoot.isEmpty())
-            {
-               obj = new DictValue().put(IntValue.get(0), leaf);
-            }
-            else if (!failIndex &&
-                     !root.equals(cleanRoot) &&
-                     String.valueOf(index).equals(cleanRoot) &&
-                     index >= 0 &&
-                     (options.parseArrays && index <= options.arrayLimit))
-            {
-               obj = new ArrayValue(index, leaf);
-            }
-            else if (options.parseIntKeys && !failIndex && String.valueOf(index).equals(cleanRoot))
-            {
-               ((DictValue) obj).put(IntValue.get(index), leaf);
-            }
-            else
-            {
-               ((DictValue) obj).put(StringValue.get(cleanRoot), leaf);
-            }
+            obj = new DictValue().append(StringValue.get(cleanRoot), leaf);
          }
          leaf = obj;
       }
@@ -223,39 +202,22 @@ public class QueryStringParser
          parts = new String[options.parameterLimit];
          System.arraycopy(oldParts, 0, parts, 0, options.parameterLimit);
       }
-      int skipIndex = -1;
+
       Charset charset = options.charset;
       Decoder decoder = options.decoder;
       if (options.charsetSentinel)
       {
-         for (int i = 0; i < parts.length; i++)
+         Charset newCharset = findCharsetSentinel(parts);
+         if (newCharset != null)
          {
-            if (parts[i].startsWith("utf8="))
-            {
-               if (parts[i].equals("utf8=%E2%9C%93"))
-               {
-                  charset = StandardCharsets.UTF_8;
-               }
-               else if (parts[i].equals("utf8=%26%2310003%3B"))
-               {
-                  charset = StandardCharsets.ISO_8859_1;
-               }
-               skipIndex = i;
-               i = parts.length;
-            }
+            charset = newCharset;
          }
       }
 
       DictValue root = new DictValue();
-      for (int i = 0; i < parts.length; i++)
+      for (String part : parts)
       {
-         if (i == skipIndex)
-         {
-            continue;
-         }
-
-         String part = parts[i];
-         if (part == null || part.trim().isEmpty())
+         if (isCharsetSentinel(part) || part.trim().isEmpty())
          {
             continue;
          }
@@ -277,13 +239,13 @@ public class QueryStringParser
             String plain = part.substring(pos + 1);
             if (options.comma && plain.contains(","))
             {
-               String[] strs = plain.split(",");
-               StringValue[] svalues = new StringValue[strs.length];
-               for (int j = 0; j < strs.length; j++)
+               String[] tokens = plain.split(",");
+               StringValue[] newTokens = new StringValue[tokens.length];
+               for (int j = 0; j < tokens.length; j++)
                {
-                  svalues[j] = StringValue.get(decoder.decode(strs[j], charset, Decoder.ContentType.VALUE));
+                  newTokens[j] = StringValue.get(decoder.decode(tokens[j], charset, Decoder.ContentType.VALUE));
                }
-               val = new ArrayValue(svalues);
+               val = new ArrayValue(newTokens);
             }
             else
             {
@@ -291,24 +253,105 @@ public class QueryStringParser
             }
          }
 
-//         if (val != null && options.interpretNumericEntities && charset == StandardCharsets.ISO_8859_1)
-//         {
-//         }
-//
-//         if (part.contains("[]="))
-//         {
-//         }
-
-         if (root.containsKey(StringValue.get(key)))
+         if (val != null && options.interpretNumericEntities && charset == StandardCharsets.ISO_8859_1)
          {
-            root.put(StringValue.get(key), new ArrayValue(root.get(StringValue.get(key)), val));
+            val = val.interpretAsNumeric();
+         }
+
+         StringValue strKey = StringValue.get(key);
+         if (root.containsKey(strKey))
+         {
+            root.put(strKey, new ArrayValue(root.get(strKey), val));
          }
          else
          {
-            root.put(StringValue.get(key), val);
+            root.put(strKey, val);
          }
       }
 
       return root;
+   }
+
+   /**
+    * Internal procedure meant to identify a specified charset from
+    * encoded sentinel inside query string.
+    *
+    * @param   parts
+    *          The parts after splitting the query string.
+    *
+    * @return  An identified charset from an eventual sentinel or {@code null} if none exist.
+    */
+   private Charset findCharsetSentinel(String[] parts)
+   {
+      for (String part : parts)
+      {
+         if (isCharsetSentinel(part))
+         {
+            if (part.equals("utf8=%E2%9C%93"))
+            {
+               return StandardCharsets.UTF_8;
+            }
+            else if (part.equals("utf8=%26%2310003%3B"))
+            {
+               return StandardCharsets.ISO_8859_1;
+            }
+         }
+      }
+      return null;
+   }
+
+   /**
+    * Check if the provided query string part is a charset sentinel.
+    * This can specify the charset to be used when decoding the query string.
+    *
+    * @param   part
+    *          The part to be checked as charset sentinel.
+    *
+    * @return  {@code true} if the part is a charset sentinel.
+    */
+   private boolean isCharsetSentinel(String part)
+   {
+      return part.startsWith("utf8=");
+   }
+
+   /**
+    * Transformer procedure which normalizes the key representation. The key
+    * can contain dots and square bracket. The result of this is a normalized
+    * form in which only square brackets are used. Therefore, each member specified
+    * with a dot is wrapped with square brackets.
+    *
+    * @param  key
+    *         The key whose dots should be rewritten in square brackets.
+    *
+    * @return A transformed key containing only square brackets.
+    */
+   private String rewriteDots(String key)
+   {
+      while (key.contains("."))
+      {
+         int idx = key.indexOf(".");
+         String left = key.substring(0, idx);
+         String right = key.substring(idx + 1);
+
+         int idx1 = right.indexOf("[");
+         int idx2 = right.indexOf(".");
+         if (idx1 == -1 && idx2 == -1)
+         {
+            key = left + "[" + right + "]";
+         }
+         else
+         {
+            int till;
+            if (idx1 == -1) till = idx2;
+            else if (idx2 == -1) till = idx1;
+            else till = Math.min(idx1, idx2);
+
+            String prop = right.substring(0, till);
+            String rest = right.substring(till);
+            key = left + "[" + prop + "]" + rest;
+         }
+      }
+
+      return key;
    }
 }

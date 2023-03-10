@@ -5,13 +5,14 @@ import ro.atek.qsparser.decoder.DefaultDecoder;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * Configuration class for the parser. There are several options
  * which can be set per parser, like the delimiter, allowing dots
  * instead of square brackets, parameter limit or array limit.
  */
-class ParserOptions
+public class ParserOptions
 {
    /** Allow using dot instead of square brackets in the key */
    public boolean allowDots = false;
@@ -32,7 +33,7 @@ class ParserOptions
    public boolean comma = false;
 
    /** The decoder used for decoding the keys and values. This uses the defined charset. */
-   public Decoder decoder = new DefaultDecoder();
+   public Decoder decoder = DefaultDecoder.DEFAULT_DECODER;
 
    /** The delimiter of the key, value entries */
    public String delimiter = "&";
@@ -43,6 +44,9 @@ class ParserOptions
    /** Remove the question mark at the beginning if exists */
    public boolean ignoreQueryPrefix = false;
 
+   /** Special procedure for ISO-8859-1 allowing to parse the numerics into proper characters */
+   public boolean interpretNumericEntities = false;
+
    /** Maximum number of key value pairs allowed */
    public int parameterLimit = 1000;
 
@@ -51,9 +55,6 @@ class ParserOptions
 
    /** Dictionaries with integer keys will have their keys parsed as integers */
    public boolean parseIntKeys = true;
-
-   /** Not used */
-   public boolean plainObjects = false;
 
    /** {@code true} means that empty values are null, otherwise they are parsed as an empty string */
    public boolean strictNullHandling = false;
@@ -66,7 +67,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions strictNullHandling(boolean strictNullHandling)
+   public ParserOptions setStrictNullHandling(boolean strictNullHandling)
    {
       this.strictNullHandling = strictNullHandling;
       return this;
@@ -80,7 +81,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions allowDots(boolean allowDots)
+   public ParserOptions setAllowDots(boolean allowDots)
    {
       this.allowDots = allowDots;
       return this;
@@ -94,7 +95,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions depth(int depth)
+   public ParserOptions setDepth(int depth)
    {
       this.depth = depth;
       return this;
@@ -108,7 +109,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions arrayLimit(int arrayLimit)
+   public ParserOptions setArrayLimit(int arrayLimit)
    {
       this.arrayLimit = arrayLimit;
       return this;
@@ -122,7 +123,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions allowSparse(boolean allowSparse)
+   public ParserOptions setAllowSparse(boolean allowSparse)
    {
       this.allowSparse = allowSparse;
       return this;
@@ -136,7 +137,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions delimiter(String delimiter)
+   public ParserOptions setDelimiter(String delimiter)
    {
       this.delimiter = delimiter;
       return this;
@@ -150,7 +151,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions parameterLimit(int parameterLimit)
+   public ParserOptions setParameterLimit(int parameterLimit)
    {
       this.parameterLimit = parameterLimit;
       return this;
@@ -164,7 +165,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions charset(Charset charset)
+   public ParserOptions setCharset(Charset charset)
    {
       this.charset = charset;
       return this;
@@ -178,7 +179,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions charsetSentinel(boolean charsetSentinel)
+   public ParserOptions setCharsetSentinel(boolean charsetSentinel)
    {
       this.charsetSentinel = charsetSentinel;
       return this;
@@ -192,7 +193,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions comma(boolean comma)
+   public ParserOptions setComma(boolean comma)
    {
       this.comma = comma;
       return this;
@@ -206,7 +207,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions decoder(Decoder decoder)
+   public ParserOptions setDecoder(Decoder decoder)
    {
       this.decoder = decoder;
       return this;
@@ -220,7 +221,7 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions parseArrays(boolean parseArrays)
+   public ParserOptions setParseArrays(boolean parseArrays)
    {
       this.parseArrays = parseArrays;
       return this;
@@ -234,9 +235,67 @@ class ParserOptions
     *
     * @return This instance.
     */
-   public ParserOptions parseIntKeys(boolean parseIntKeys)
+   public ParserOptions setParseIntKeys(boolean parseIntKeys)
    {
       this.parseIntKeys = parseIntKeys;
       return this;
+   }
+
+   /**
+    * Set the {@link #interpretNumericEntities} option.
+    *
+    * @param  interpretNumericEntities
+    *         The value for {@link #interpretNumericEntities}.
+    *
+    * @return This instance.
+    */
+   public ParserOptions setInterpretNumericEntities(boolean interpretNumericEntities)
+   {
+      this.interpretNumericEntities = interpretNumericEntities;
+      return this;
+   }
+
+   /**
+    * Set the {@link #ignoreQueryPrefix} option.
+    *
+    * @param  ignoreQueryPrefix
+    *         The value for {@link #ignoreQueryPrefix}.
+    *
+    * @return This instance.
+    */
+   public ParserOptions setIgnoreQueryPrefix(boolean ignoreQueryPrefix)
+   {
+      this.ignoreQueryPrefix = ignoreQueryPrefix;
+      return this;
+   }
+
+   @Override
+   public boolean equals(Object o)
+   {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      ParserOptions that = (ParserOptions) o;
+      return allowDots == that.allowDots &&
+             allowSparse == that.allowSparse &&
+             arrayLimit == that.arrayLimit &&
+             charsetSentinel == that.charsetSentinel &&
+             comma == that.comma &&
+             depth == that.depth &&
+             ignoreQueryPrefix == that.ignoreQueryPrefix &&
+             parameterLimit == that.parameterLimit &&
+             parseArrays == that.parseArrays &&
+             parseIntKeys == that.parseIntKeys &&
+             strictNullHandling == that.strictNullHandling &&
+             charset.equals(that.charset) &&
+             decoder == that.decoder &&
+             delimiter.equals(that.delimiter);
+   }
+
+   @Override
+   public int hashCode()
+   {
+      return Objects.hash(allowDots, allowSparse, arrayLimit, charset, charsetSentinel, comma, decoder,
+                          delimiter, depth, ignoreQueryPrefix, parameterLimit, parseArrays, parseIntKeys,
+                          strictNullHandling);
    }
 }
