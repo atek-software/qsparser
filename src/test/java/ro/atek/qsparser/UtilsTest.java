@@ -7,14 +7,18 @@ import ro.atek.qsparser.value.*;
 public class UtilsTest
 {
    @Test
-   void merge_with_null()
+   void merge_with_null_value()
    {
       ArrayValue array = new ArrayValue(new Value[] { IntValue.get(42) });
       ArrayValue arrayWithNull = new ArrayValue(new Value[] { IntValue.get(42), NullValue.get() });
       ArrayValue nullWithArray = new ArrayValue(new Value[] { NullValue.get(), IntValue.get(42) });
+      ArrayValue boolArray = new ArrayValue(new Value[] { NullValue.get(), BoolValue.TRUE });
+      ArrayValue boolArray2 = new ArrayValue(new Value[] { BoolValue.TRUE, NullValue.get() });
 
       Assertions.assertEquals(array.merge(NullValue.get()), arrayWithNull);
       Assertions.assertEquals(NullValue.get().merge(array), nullWithArray);
+      Assertions.assertEquals(NullValue.get().merge(BoolValue.TRUE), boolArray);
+      Assertions.assertEquals(BoolValue.TRUE.merge(NullValue.get()), boolArray2);
    }
 
    @Test
