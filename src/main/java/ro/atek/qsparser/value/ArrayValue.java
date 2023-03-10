@@ -109,40 +109,31 @@ implements Value
       {
          return new ArrayValue(this, value);
       }
-
       ArrayValue other = (ArrayValue) value;
-      Value[] resultValues = new Value[Math.max(this.size(), other.size())];
-      System.arraycopy(this.toArray(new Value[0]), 0, resultValues, 0, this.size());
+      List<Value> newValues = new ArrayList<>(this);
 
-      DictValue dictValue = other.asDictValue();
-      List<Value> extra = new ArrayList<>();
-      for (Map.Entry<DictKey, Value> elem : dictValue.entrySet())
+      for (int i = 0; i < other.size(); i++)
       {
-         int key = ((IntValue) elem.getKey()).intern();
-         if (resultValues[key] == null)
+         if (i < newValues.size() && newValues.get(i) != null)
          {
-            resultValues[key] = elem.getValue();
-         }
-         else if (elem.getValue().getType()   == ValueType.DICT &&
-                  resultValues[key].getType() == ValueType.DICT)
-         {
-            resultValues[key] = resultValues[key].merge(elem.getValue());
+            if (other.get(i) != null && other.get(i).getType() == ValueType.DICT &&
+               newValues.get(i).getType() == ValueType.DICT)
+            {
+               newValues.set(i, newValues.get(i).merge(other.get(i)));
+            }
+            else
+            {
+               newValues.add(other.get(i));
+            }
          }
          else
          {
-            extra.add(elem.getValue());
+            while (newValues.size() <= i) newValues.add(null);
+            newValues.set(i, other.get(i));
          }
       }
 
-      Value[] oldValues = resultValues;
-      resultValues = new Value[oldValues.length + extra.size()];
-      System.arraycopy(oldValues, 0, resultValues, 0, oldValues.length);
-      for (int i = oldValues.length; i < resultValues.length; i++)
-      {
-         resultValues[i] = extra.get(i - oldValues.length);
-      }
-
-      return new ArrayValue(resultValues);
+      return new ArrayValue(newValues);
    }
 
    /**
