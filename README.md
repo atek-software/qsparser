@@ -63,6 +63,6 @@ Download from the [GitHub Packages](https://github.com/llalexandru00/qsparser/pa
 <repository>
    <id>github</id>
    <name>GitHub Packages</name>
-   <url>https://maven.pkg.github.com/llalexandru00/qsparser</url>
+   <url>https://maven.pkg.github.com/atek-software/qsparser</url>
 </repository>
 ```
