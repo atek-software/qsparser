@@ -1,5 +1,10 @@
 package ro.atek.qsparser.value;
 
+import ro.atek.qsparser.QueryStringEntry;
+import ro.atek.qsparser.StringifyOptions;
+
+import java.util.List;
+
 /**
  * General interface for all internal values. To support
  * an internal representation of the query string, we need
@@ -43,13 +48,6 @@ public interface Value
    }
 
    /**
-    * Retrieve the value type of this.
-    *
-    * @return   The value type of the representation.
-    */
-   ValueType getType();
-
-   /**
     * Particular use-case in which a value need to be reinterpreted
     * as a numeric value. This is widely used for strings that look like
     * plain &#9312; and should be interpreted as a specific symbol.
@@ -61,4 +59,23 @@ public interface Value
    {
       return this;
    }
+
+   /**
+    * Represent the value as a query string. This is different from
+    * {@code toString} in the sense that the result can be parsed
+    * back as this value.
+    *
+    * @param   options
+    *          The options used when generating the query string.
+    *
+    * @return  A query string representation of this value.
+    */
+   List<QueryStringEntry> stringify(String key, StringifyOptions options);
+
+   /**
+    * Retrieve the value type of this.
+    *
+    * @return   The value type of the representation.
+    */
+   ValueType getType();
 }

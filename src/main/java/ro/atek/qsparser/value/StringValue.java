@@ -1,5 +1,11 @@
 package ro.atek.qsparser.value;
 
+import ro.atek.qsparser.QueryStringEntry;
+import ro.atek.qsparser.StringifyOptions;
+
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Most common type of value parsed from a query string. A {@code StringValue}
  * is able to store a string reference. Basically, it is a simple wrapper over
@@ -53,6 +59,20 @@ implements Value,
       return value;
    }
 
+
+   /**
+    * Represent the value as a query string. This is different from
+    * {@code toString} in the sense that the result can be parsed
+    * back as this value.
+    *
+    * @return   A query string representation of this value.
+    */
+   @Override
+   public List<QueryStringEntry> stringify(String key, StringifyOptions options)
+   {
+      return Collections.singletonList(new QueryStringEntry(key, intern()));
+   }
+
    /**
     * Retrieve the value type of this.
     *
@@ -72,6 +92,7 @@ implements Value,
     * @return   The value in which all nested string values are
     *           reinterpreted based on the detected char code.
     */
+   @Override
    public Value interpretAsNumeric()
    {
       String str = intern();

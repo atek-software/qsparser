@@ -1,5 +1,11 @@
 package ro.atek.qsparser.value;
 
+import ro.atek.qsparser.QueryStringEntry;
+import ro.atek.qsparser.StringifyOptions;
+
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Special type of value which can represent an effective int. This kind
  * of value is used just to allow an automatic parsing of some dictionary
@@ -46,6 +52,19 @@ implements Value,
    public int intern()
    {
       return value;
+   }
+
+   /**
+    * Represent the value as a query string. This is different from
+    * {@code toString} in the sense that the result can be parsed
+    * back as this value.
+    *
+    * @return   A query string representation of this value.
+    */
+   @Override
+   public List<QueryStringEntry> stringify(String key, StringifyOptions options)
+   {
+      return Collections.singletonList(new QueryStringEntry(key, String.valueOf(intern())));
    }
 
    /**

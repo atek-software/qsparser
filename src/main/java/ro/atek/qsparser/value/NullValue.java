@@ -1,5 +1,11 @@
 package ro.atek.qsparser.value;
 
+import ro.atek.qsparser.QueryStringEntry;
+import ro.atek.qsparser.StringifyOptions;
+
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Special type of value which denotes the null representation.
  * This should not be confused with the lack of information. An
@@ -31,6 +37,19 @@ implements Value
    private NullValue()
    {
 
+   }
+
+   /**
+    * Represent the value as a query string. This is different from
+    * {@code toString} in the sense that the result can be parsed
+    * back as this value.
+    *
+    * @return   A query string representation of this value.
+    */
+   @Override
+   public List<QueryStringEntry> stringify(String key, StringifyOptions options)
+   {
+      return Collections.singletonList(new QueryStringEntry(key, options.strictNullHandling ? null : ""));
    }
 
    /**

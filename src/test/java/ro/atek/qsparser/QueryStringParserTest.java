@@ -2,8 +2,9 @@ package ro.atek.qsparser;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import ro.atek.qsparser.decoder.Decoder;
-import ro.atek.qsparser.decoder.DefaultDecoder;
+import ro.atek.qsparser.net.ContentType;
+import ro.atek.qsparser.net.Decoder;
+import ro.atek.qsparser.net.DefaultDecoder;
 import ro.atek.qsparser.value.*;
 
 import java.io.UnsupportedEncodingException;
@@ -802,7 +803,7 @@ class QueryStringParserTest
          }
          catch (NumberFormatException e)
          {
-            return DefaultDecoder.DEFAULT_DECODER.decode(content, charset, type);
+            return DefaultDecoder.INSTANCE.decode(content, charset, type);
          }
       };
       QueryStringParser parser = new QueryStringParser(new ParserOptions().setDecoder(decoder));
@@ -986,10 +987,10 @@ class QueryStringParserTest
    {
       QueryStringParser parser = new QueryStringParser(new ParserOptions().setDecoder(
          (content, charset, type) -> {
-            if (type == Decoder.ContentType.KEY)
-               return DefaultDecoder.DEFAULT_DECODER.decode(content.toLowerCase(), charset, type);
+            if (type == ContentType.KEY)
+               return DefaultDecoder.INSTANCE.decode(content.toLowerCase(), charset, type);
             else
-               return DefaultDecoder.DEFAULT_DECODER.decode(content.toUpperCase(), charset, type);
+               return DefaultDecoder.INSTANCE.decode(content.toUpperCase(), charset, type);
          }));
       Assertions.assertEquals(parser.parse("KeY=vAlUe"), new DictValue().append(
          StringValue.get("key"), StringValue.get("VALUE")));
