@@ -64,6 +64,8 @@ public interface Value
     * {@code toString} in the sense that the result can be parsed
     * back as this value.
     *
+    * @param   key
+    *          The partially computed key until this value was reached.
     * @param   options
     *          The options used when generating the query string.
     *

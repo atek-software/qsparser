@@ -16,6 +16,15 @@ implements Decoder
    public static final DefaultDecoder INSTANCE = new DefaultDecoder();
 
    /**
+    * Implicit constructor. Make sure you use {@link #INSTANCE} if
+    * you are going to use the default decoder anyway.
+    */
+   public DefaultDecoder()
+   {
+
+   }
+
+   /**
     * The core method of decoding parsed strings. This uses {@code URLDecoder}.
     *
     * @param  content

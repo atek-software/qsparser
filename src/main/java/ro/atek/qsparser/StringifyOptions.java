@@ -59,6 +59,15 @@ public class StringifyOptions
    public boolean strictNullHandling = false;
 
    /**
+    * Implicit constructor. Use {@link #DEFAULT} if going to
+    * use the default settings.
+    */
+   public StringifyOptions()
+   {
+
+   }
+
+   /**
     * Set the {@link #encoder} option.
     *
     * @param  encoder

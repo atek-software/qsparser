@@ -66,6 +66,15 @@ public class ParserOptions
    public boolean strictNullHandling = false;
 
    /**
+    * Implicit constructor. Use {@link #DEFAULT} if going to
+    * use the default settings.
+    */
+   public ParserOptions()
+   {
+
+   }
+
+   /**
     * Set the {@link #strictNullHandling} option.
     *
     * @param  strictNullHandling

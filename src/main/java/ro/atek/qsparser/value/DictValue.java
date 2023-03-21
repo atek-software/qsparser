@@ -18,6 +18,14 @@ extends LinkedHashMap<DictKey, Value>
 implements Value
 {
    /**
+    * Implicit constructor.
+    */
+   public DictValue()
+   {
+
+   }
+
+   /**
     * Represent the value as a query string. This is different from
     * {@code toString} in the sense that the result can be parsed
     * back as this value.
@@ -208,6 +216,8 @@ implements Value
     *
     * @param   ident
     *          The ident to which this should be aligned.
+    * @param   inline
+    *          {@code true} to avoid appending newlines.
     *
     * @return  An indented string representation of a dictionary
     */

@@ -16,6 +16,15 @@ implements Encoder
    public static final DefaultEncoder INSTANCE = new DefaultEncoder();
 
    /**
+    * Implicit constructor. Make sure you use {@link #INSTANCE} if
+    * you are going to use the default encoder anyway.
+    */
+   public DefaultEncoder()
+   {
+
+   }
+
+   /**
     * The core method of encoding values into a query string.
     *
     * @param  content

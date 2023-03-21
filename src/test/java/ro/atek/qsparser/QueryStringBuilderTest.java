@@ -408,4 +408,16 @@ class QueryStringBuilderTest
       options.setEncodeValuesOnly(true).setArrayFormat(ArrayFormat.COMMA);
       Assertions.assertEquals("a=DictValue,2,3", builder.stringify(value));
    }
+
+   @Test
+   void poc()
+   {
+      QueryStringBuilder builder = new QueryStringBuilder();
+      StringValue address = StringValue.get("address");
+      StringValue city = StringValue.get("city");
+      StringValue ny = StringValue.get("New York");
+      String queryString = builder.stringify(new DictValue().append(address,
+                                                                    new DictValue().append(city, ny)));
+      Assertions.assertEquals("address%5Bcity%5D=New+York", queryString);
+   }
 }
