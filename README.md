@@ -1,9 +1,9 @@
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/llalexandru00/qsparser/maven-publish.yml?logo=github)
-![GitHub](https://img.shields.io/github/license/llalexandru00/qsparser)
- [![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=llalexandru00_qsparser&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=llalexandru00_qsparser)
- [![SonarCloud Maintainability](https://sonarcloud.io/api/project_badges/measure?project=llalexandru00_qsparser&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=llalexandru00_qsparser)
- [![SonarCloud Bugs](https://sonarcloud.io/api/project_badges/measure?project=llalexandru00_qsparser&metric=reliability_rating)](https://sonarcloud.io/component_measures/metric/reliability_rating/list?id=llalexandru00_qsparser)
- [![SonarCloud Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=llalexandru00_qsparser&metric=security_rating)](https://sonarcloud.io/component_measures/metric/security_rating/list?id=llalexandru00_qsparser)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/atek-software/qsparser/maven-publish.yml?logo=github)
+![GitHub](https://img.shields.io/github/license/atek-software/qsparser)
+ [![SonarCloud Coverage](https://sonarcloud.io/api/project_badges/measure?project=atek-software_qsparser&metric=coverage)](https://sonarcloud.io/component_measures/metric/coverage/list?id=atek-software_qsparser)
+ [![SonarCloud Maintainability](https://sonarcloud.io/api/project_badges/measure?project=atek-software_qsparser&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=atek-software_qsparser)
+ [![SonarCloud Bugs](https://sonarcloud.io/api/project_badges/measure?project=atek-software_qsparser&metric=reliability_rating)](https://sonarcloud.io/component_measures/metric/reliability_rating/list?id=atek-software_qsparser)
+ [![SonarCloud Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=atek-software_qsparser&metric=security_rating)](https://sonarcloud.io/component_measures/metric/security_rating/list?id=atek-software_qsparser)
  
 QsParser is a [query-string](https://en.wikipedia.org/wiki/Query_string) parsing library for Java. Its goal is to make Java back-end applications able to parse query strings generated on a JavaScript client with [qs](https://github.com/ljharb/qs). This way, one can close the gap between the JS front-end data structures and the Java back-end representations.
 
@@ -69,7 +69,7 @@ The QS Builder is able to stringify any structure represented through the provid
 * Encode query string and support custom encodings: `filter%5B0%5D%5B%5D=John`
 
 ## Download
-Download from the [GitHub Packages](https://github.com/llalexandru00/qsparser/packages/) section or depend through Maven or Gradle. 
+Download from the [GitHub Packages](https://github.com/atek-software/qsparser/packages/) section or depend through Maven or Gradle. 
 ```xml
 <dependency>
   <groupId>ro.atek</groupId>
@@ -79,7 +79,7 @@ Download from the [GitHub Packages](https://github.com/llalexandru00/qsparser/pa
 ```
 :warning: The packages are not uploaded to Maven Central yet.
 
-:heavy_exclamation_mark: The packages are uploaded to [GitHub Packages](https://github.com/llalexandru00/qsparser/packages/), so you may need to add the required repository or use [jitpack](https://jitpack.io).
+:heavy_exclamation_mark: The packages are uploaded to [GitHub Packages](https://github.com/atek-software/qsparser/packages/), so you may need to add the required repository or use [jitpack](https://jitpack.io).
 ```xml
 <repository>
    <id>github</id>
