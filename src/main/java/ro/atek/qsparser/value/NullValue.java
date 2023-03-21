@@ -1,6 +1,5 @@
 package ro.atek.qsparser.value;
 
-import ro.atek.qsparser.QueryStringEntry;
 import ro.atek.qsparser.StringifyOptions;
 
 import java.util.Collections;
@@ -14,7 +13,7 @@ import java.util.List;
  * of information from the query string. {@code NullValue} is used
  * to represent a null value described in the query string explicitly.
  */
-public final class NullValue
+public class NullValue
 implements Value
 {
    /** Store one single instance of the null value */

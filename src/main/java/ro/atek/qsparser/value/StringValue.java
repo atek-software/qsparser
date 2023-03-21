@@ -1,6 +1,5 @@
 package ro.atek.qsparser.value;
 
-import ro.atek.qsparser.QueryStringEntry;
 import ro.atek.qsparser.StringifyOptions;
 
 import java.util.Collections;
@@ -12,7 +11,7 @@ import java.util.List;
  * {@code String} which allows the implementation of {@code Value}. Also,
  * this kind of value is able to represent a dictionary key.
  */
-public final class StringValue
+public class StringValue
 implements Value,
            DictKey
 {

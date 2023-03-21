@@ -1,13 +1,18 @@
 package ro.atek.qsparser;
 
 import ro.atek.qsparser.net.ContentType;
+import ro.atek.qsparser.value.QueryStringEntry;
 import ro.atek.qsparser.value.Value;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Core helper used for generating query strings based on internal representations.
+ */
 public class QueryStringBuilder
 {
+   /** The configuration used when generating the query string */
    private final StringifyOptions options;
 
    /**
@@ -31,6 +36,16 @@ public class QueryStringBuilder
       this.options = options == null ? StringifyOptions.DEFAULT : options;
    }
 
+   /**
+    * Core method used to encode a value into a query string. The resulting string
+    * is already encoded and, theoretically, parsing it back should result in the
+    * same provided value.
+    *
+    * @param   value
+    *          The root of the value to be converted into a query string.
+    *
+    * @return  A query string based on the provided internal representation.
+    */
    public String stringify(Value value)
    {
       if (value == null)
@@ -47,6 +62,15 @@ public class QueryStringBuilder
       return queryString.isEmpty() ? "" : prefix + queryString;
    }
 
+   /**
+    * Internal method used to ensure that an entry (key value pair) is
+    * properly encoded, honoring the provided options.
+    *
+    * @param   pair
+    *          The key value entry provided by the query string builder.
+    *
+    * @return  An encoded string representation of the entry
+    */
    private String stringifyEntry(QueryStringEntry pair)
    {
       String key = encode(pair.getKey(), ContentType.KEY);
@@ -68,6 +92,16 @@ public class QueryStringBuilder
       return key + "=" + val;
    }
 
+   /**
+    * Simple mean of honoring the encoder provided by the options.
+    *
+    * @param   value
+    *          The string value to be URL encoded.
+    * @param   type
+    *          The type of the value: key or value.
+    *
+    * @return  The encoded representation of the provided string.
+    */
    private String encode(String value, ContentType type)
    {
       if (value == null)

@@ -1,6 +1,5 @@
 package ro.atek.qsparser.value;
 
-import ro.atek.qsparser.QueryStringEntry;
 import ro.atek.qsparser.StringifyOptions;
 
 import java.util.*;
@@ -14,7 +13,7 @@ import java.util.*;
  * is highly discouraged to use this as mutable, as one such instance can
  * be nested into other compound values as well.
  */
-public final class DictValue
+public class DictValue
 extends LinkedHashMap<DictKey, Value>
 implements Value
 {

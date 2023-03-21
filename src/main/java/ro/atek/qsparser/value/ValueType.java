@@ -5,5 +5,16 @@ package ro.atek.qsparser.value;
  */
 public enum ValueType
 {
-   NULL, BOOL, INT, STRING, ARRAY, DICT
+   /** Null value */
+   NULL,
+   /** Boolean value */
+   BOOL,
+   /** Integer value */
+   INT,
+   /** String value */
+   STRING,
+   /** Array value */
+   ARRAY,
+   /** Dictionary value */
+   DICT
 }

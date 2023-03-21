@@ -7,7 +7,7 @@ import ro.atek.qsparser.net.DefaultEncoder;
 import ro.atek.qsparser.net.Encoder;
 import ro.atek.qsparser.value.*;
 
-public class QueryStringBuilderTest
+class QueryStringBuilderTest
 {
    private final StringValue a = StringValue.get("a");
    private final StringValue b = StringValue.get("b");
@@ -22,14 +22,22 @@ public class QueryStringBuilderTest
    void stringifies_a_querystring_object()
    {
       QueryStringBuilder builder = new QueryStringBuilder();
-      Assertions.assertEquals("a=b", builder.stringify(new DictValue().append(a, b)));
-      Assertions.assertEquals("a=1", builder.stringify(new DictValue().append(a, int1)));
-      Assertions.assertEquals("a=1&b=2", builder.stringify(new DictValue().append(a, int1).append(b, int2)));
-      Assertions.assertEquals("a=A_Z", builder.stringify(new DictValue().append(a, StringValue.get("A_Z"))));
-      Assertions.assertEquals("a=%E2%82%AC", builder.stringify(new DictValue().append(a, StringValue.get("€"))));
-      Assertions.assertEquals("a=%EE%80%80", builder.stringify(new DictValue().append(a, StringValue.get("\uE000"))));
-      Assertions.assertEquals("a=%D7%90", builder.stringify(new DictValue().append(a, StringValue.get("א"))));
-      Assertions.assertEquals("a=%F0%90%90%B7", builder.stringify(new DictValue().append(a, StringValue.get("\uD801\uDC37"))));
+      Assertions.assertEquals("a=b",
+                              builder.stringify(new DictValue().append(a, b)));
+      Assertions.assertEquals("a=1",
+                              builder.stringify(new DictValue().append(a, int1)));
+      Assertions.assertEquals("a=1&b=2",
+                              builder.stringify(new DictValue().append(a, int1).append(b, int2)));
+      Assertions.assertEquals("a=A_Z",
+                              builder.stringify(new DictValue().append(a, StringValue.get("A_Z"))));
+      Assertions.assertEquals("a=%E2%82%AC",
+                              builder.stringify(new DictValue().append(a, StringValue.get("€"))));
+      Assertions.assertEquals("a=%EE%80%80",
+                              builder.stringify(new DictValue().append(a, StringValue.get("\uE000"))));
+      Assertions.assertEquals("a=%D7%90",
+                              builder.stringify(new DictValue().append(a, StringValue.get("א"))));
+      Assertions.assertEquals("a=%F0%90%90%B7",
+                              builder.stringify(new DictValue().append(a, StringValue.get("\uD801\uDC37"))));
    }
 
    @Test
@@ -99,7 +107,8 @@ public class QueryStringBuilderTest
    void stringifies_nested_falsy_values()
    {
       QueryStringBuilder builder1 = new QueryStringBuilder();
-      QueryStringBuilder builder2 = new QueryStringBuilder(new StringifyOptions().setStrictNullHandling(true));
+      QueryStringBuilder builder2 = new QueryStringBuilder(
+         new StringifyOptions().setStrictNullHandling(true));
       Assertions.assertEquals("a%5Bb%5D%5Bc%5D=",
                               builder1.stringify(new DictValue().append(a,
                                                  new DictValue().append(b,
@@ -260,7 +269,8 @@ public class QueryStringBuilderTest
    {
       StringifyOptions options = new StringifyOptions().setEncodeValuesOnly(true);
       QueryStringBuilder builder = new QueryStringBuilder(options);
-      Value value = new DictValue().append(a, new DictValue().append(b, new ArrayValue(new Value[] { c, d })));
+      Value value = new DictValue().append(a, new DictValue().append(b,
+                                                                     new ArrayValue(new Value[] { c, d })));
 
       Assertions.assertEquals("a[b][0]=c&a[b][1]=d", builder.stringify(value));
       options.setArrayFormat(ArrayFormat.INDICES);
@@ -350,7 +360,8 @@ public class QueryStringBuilderTest
    {
       StringifyOptions options = new StringifyOptions();
       QueryStringBuilder builder = new QueryStringBuilder(options);
-      Value value = new DictValue().append(a, new DictValue().append(b, new ArrayValue(new Value[]{ c, d })));
+      Value value = new DictValue().append(a, new DictValue().append(b,
+                                                                     new ArrayValue(new Value[]{ c, d })));
 
       options.setAllowDots(true).setEncodeValuesOnly(true);
       Assertions.assertEquals("a.b[0]=c&a.b[1]=d", builder.stringify(value));

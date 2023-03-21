@@ -1,7 +1,6 @@
 package ro.atek.qsparser.value;
 
 import ro.atek.qsparser.ArrayFormat;
-import ro.atek.qsparser.QueryStringEntry;
 import ro.atek.qsparser.StringifyOptions;
 
 import java.util.*;
@@ -13,7 +12,7 @@ import java.util.stream.Stream;
  * format. This type of value is immutable as the value interface
  * requires.
  */
-public final class ArrayValue
+public class ArrayValue
 extends ArrayList<Value>
 implements Value
 {

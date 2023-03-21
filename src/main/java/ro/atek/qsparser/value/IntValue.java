@@ -1,6 +1,5 @@
 package ro.atek.qsparser.value;
 
-import ro.atek.qsparser.QueryStringEntry;
 import ro.atek.qsparser.StringifyOptions;
 
 import java.util.Collections;
@@ -12,7 +11,7 @@ import java.util.List;
  * keys into integers. This only complicates the dictionary keys, maybe it
  * should be dropped.
  */
-public final class IntValue
+public class IntValue
 implements Value,
            DictKey
 {
