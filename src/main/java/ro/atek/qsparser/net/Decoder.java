@@ -1,4 +1,4 @@
-package ro.atek.qsparser.decoder;
+package ro.atek.qsparser.net;
 
 import java.nio.charset.Charset;
 
@@ -20,15 +20,4 @@ public interface Decoder
     * @return  A decoded string for the provided content.
     */
    String decode(String content, Charset charset, ContentType type);
-
-   /**
-    * An internal enum to type check the type of content used for decoding.
-    */
-   enum ContentType
-   {
-      /** The key of a query string entry */
-      KEY,
-      /** The value of a query string entry */
-      VALUE
-   }
 }

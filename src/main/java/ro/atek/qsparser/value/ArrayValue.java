@@ -1,5 +1,8 @@
 package ro.atek.qsparser.value;
 
+import ro.atek.qsparser.ArrayFormat;
+import ro.atek.qsparser.StringifyOptions;
+
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -9,7 +12,7 @@ import java.util.stream.Stream;
  * format. This type of value is immutable as the value interface
  * requires.
  */
-public final class ArrayValue
+public class ArrayValue
 extends ArrayList<Value>
 implements Value
 {
@@ -67,18 +70,79 @@ implements Value
    public ArrayValue(int index, Value value)
    {
       this(new Value[index + 1]);
-//      this.values = new Value[index + 1];
       this.set(index, value == null ? NullValue.get() : value);
+   }
+
+   /**
+    * Represent the value as a query string. This is different from
+    * {@code toString} in the sense that the result can be parsed
+    * back as this value.
+    *
+    * @param   options
+    *          The options used when generating the query string.
+    *
+    * @return  A query string representation of this value.
+    */
+   @Override
+   public List<QueryStringEntry> stringify(String key, StringifyOptions options)
+   {
+      if (key == null || options.arrayFormat == ArrayFormat.COMMA)
+      {
+         List<String> chunks = new ArrayList<>();
+         for (int i = 0; i < this.size(); i++)
+         {
+            Value val = this.get(i);
+            if (val == null)
+            {
+               continue;
+            }
+            List<String> values = val.stringify(null, options).get(0).getValues();
+            if (values != null)
+            {
+               chunks.addAll(values);
+            }
+         }
+
+         String newKey = options.commaRoundTrip && this.size() <= 1 ? key + "[]" : key;
+         return Collections.singletonList(new QueryStringEntry(newKey, chunks));
+      }
+      List<QueryStringEntry> strs = new ArrayList<>();
+      for (int i = 0; i < this.size(); i++)
+      {
+         Value val = this.get(i);
+         if (val == null)
+         {
+            continue;
+         }
+         String newKey = String.valueOf(i);
+         if (!key.isEmpty())
+         {
+            newKey = key;
+            if (options.indices)
+            {
+               switch (options.arrayFormat)
+               {
+                  case INDICES:
+                     newKey = key + "[" + i + "]";
+                     break;
+                  case BRACKETS:
+                     newKey = key + "[]";
+                     break;
+                  case REPEAT:
+                     newKey = key;
+                     break;
+               }
+            }
+         }
+         strs.addAll(val.stringify(newKey, options));
+      }
+      return strs;
    }
 
    /**
     * Implementation of the merge routine. This allows merging this array
     * with any other arbitrary value. The result is a new instance, so neither
     * this nor the operand is altered.
-    * <p>
-    * This can only merge with a string value (concatenating it at then end),
-    * a dictionary (using the dictionary representation of this array) or another
-    * array.
     * <p>
     * In case another array is merged in this, don't simply concatenate. Usually,
     * arrays have only some values set on some specific indexes. This means
@@ -109,31 +173,31 @@ implements Value
       {
          return new ArrayValue(this, value);
       }
+
       ArrayValue other = (ArrayValue) value;
-      List<Value> newValues = new ArrayList<>(this);
+      ArrayValue newValues = new ArrayValue(this);
 
       for (int i = 0; i < other.size(); i++)
       {
-         if (i < newValues.size() && newValues.get(i) != null)
+         boolean has = i < newValues.size() && newValues.get(i) != null;
+         if (has &&
+             other.get(i) != null &&
+             other.get(i).getType() == ValueType.DICT &&
+             newValues.get(i).getType() == ValueType.DICT)
          {
-            if (other.get(i) != null && other.get(i).getType() == ValueType.DICT &&
-               newValues.get(i).getType() == ValueType.DICT)
-            {
-               newValues.set(i, newValues.get(i).merge(other.get(i)));
-            }
-            else
-            {
-               newValues.add(other.get(i));
-            }
+            newValues.set(i, newValues.get(i).merge(other.get(i)));
+         }
+         else if (has)
+         {
+            newValues.add(other.get(i));
          }
          else
          {
-            while (newValues.size() <= i) newValues.add(null);
             newValues.set(i, other.get(i));
          }
       }
 
-      return new ArrayValue(newValues);
+      return newValues;
    }
 
    /**
@@ -186,6 +250,23 @@ implements Value
    public ValueType getType()
    {
       return ValueType.ARRAY;
+   }
+
+   /**
+    * Override the super method to automatically expend the array when
+    * doing a set. This is widely used in the parsing process as one
+    * can set a value to an index which is not yet in array's bounds.
+    *
+    * @param index index of the element to replace
+    * @param value element to be stored at the specified position
+    *
+    * @return  The element which was previously positioned at index.
+    */
+   @Override
+   public Value set(int index, Value value)
+   {
+      while (size() <= index) this.add(null);
+      return super.set(index, value);
    }
 
    /**

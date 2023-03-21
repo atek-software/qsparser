@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import ro.atek.qsparser.value.*;
 
-public class UtilsTest
+class UtilsTest
 {
    @Test
    void merge_with_null_value()

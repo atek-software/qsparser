@@ -1,7 +1,7 @@
 package ro.atek.qsparser;
 
-import ro.atek.qsparser.decoder.Decoder;
-import ro.atek.qsparser.decoder.DefaultDecoder;
+import ro.atek.qsparser.net.Decoder;
+import ro.atek.qsparser.net.DefaultDecoder;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +14,12 @@ import java.util.Objects;
  */
 public class ParserOptions
 {
+   /**
+    * A default instance of the parser options.
+    * This should be used to avoid generating multiple default instances.
+    */
+   public static final ParserOptions DEFAULT = new ParserOptions();
+
    /** Allow using dot instead of square brackets in the key */
    public boolean allowDots = false;
 
@@ -33,7 +39,7 @@ public class ParserOptions
    public boolean comma = false;
 
    /** The decoder used for decoding the keys and values. This uses the defined charset. */
-   public Decoder decoder = DefaultDecoder.DEFAULT_DECODER;
+   public Decoder decoder = DefaultDecoder.INSTANCE;
 
    /** The delimiter of the key, value entries */
    public String delimiter = "&";
@@ -269,6 +275,16 @@ public class ParserOptions
       return this;
    }
 
+   /**
+    * Check if the provided object is a parser options instance with the same
+    * options set.
+    *
+    * @param   o
+    *          Another object used for equality check.
+    *
+    * @return  {@code true} if the provided object is a parser object instance with
+    *          the same options set.
+    */
    @Override
    public boolean equals(Object o)
    {
@@ -291,6 +307,11 @@ public class ParserOptions
              delimiter.equals(that.delimiter);
    }
 
+   /**
+    * Compute the hash-code of the parser options.
+    *
+    * @return   the hash-code of the options.
+    */
    @Override
    public int hashCode()
    {

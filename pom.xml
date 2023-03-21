@@ -6,7 +6,12 @@
 
     <groupId>ro.atek</groupId>
     <artifactId>qsparser</artifactId>
-    <version>0.2.0-alpha</version>
+    <version>0.3.0-alpha</version>
+    <packaging>jar</packaging>
+
+    <name>QsParser</name>
+    <description>A querystring parser in Java compatible with JS representation.</description>
+    <url>https://github.com/atek-software/qsparser</url>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -15,6 +20,7 @@
         <sonar.organization>llalexandru00</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -23,6 +29,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
     <distributionManagement>
         <repository>
             <id>github</id>

@@ -1,4 +1,4 @@
-package ro.atek.qsparser.decoder;
+package ro.atek.qsparser.net;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -13,15 +13,7 @@ public class DefaultDecoder
 implements Decoder
 {
    /** Convenient singleton */
-   public static final DefaultDecoder DEFAULT_DECODER = new DefaultDecoder();
-
-   /**
-    * Private constructor.
-    */
-   private DefaultDecoder()
-   {
-
-   }
+   public static final DefaultDecoder INSTANCE = new DefaultDecoder();
 
    /**
     * The core method of decoding parsed strings. This uses {@code URLDecoder}.

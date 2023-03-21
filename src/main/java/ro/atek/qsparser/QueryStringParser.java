@@ -1,13 +1,11 @@
 package ro.atek.qsparser;
 
-import ro.atek.qsparser.decoder.*;
+import ro.atek.qsparser.net.*;
 import ro.atek.qsparser.value.*;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Core parser of the query strings.
@@ -35,7 +33,7 @@ public class QueryStringParser
     */
    public QueryStringParser(ParserOptions options)
    {
-      this.options = options == null ? new ParserOptions() : options;
+      this.options = options == null ? ParserOptions.DEFAULT : options;
    }
 
    /**
@@ -136,7 +134,7 @@ public class QueryStringParser
          String root = chain.get(i);
          if (root.equals("[]") && options.parseArrays)
          {
-            leaf = leaf instanceof ArrayValue ? leaf : new ArrayValue(new Value[] { leaf });
+            leaf = leaf.getType() == ValueType.ARRAY ? leaf : new ArrayValue(new Value[] { leaf });
             continue;
          }
 
@@ -229,12 +227,12 @@ public class QueryStringParser
          Value val;
          if (pos == -1)
          {
-            key = decoder.decode(part, charset, Decoder.ContentType.KEY);
+            key = decoder.decode(part, charset, ContentType.KEY);
             val = options.strictNullHandling ? NullValue.get() : StringValue.get("");
          }
          else
          {
-            key = decoder.decode(part.substring(0, pos), charset, Decoder.ContentType.KEY);
+            key = decoder.decode(part.substring(0, pos), charset, ContentType.KEY);
 
             String plain = part.substring(pos + 1);
             if (options.comma && plain.contains(","))
@@ -243,13 +241,13 @@ public class QueryStringParser
                StringValue[] newTokens = new StringValue[tokens.length];
                for (int j = 0; j < tokens.length; j++)
                {
-                  newTokens[j] = StringValue.get(decoder.decode(tokens[j], charset, Decoder.ContentType.VALUE));
+                  newTokens[j] = StringValue.get(decoder.decode(tokens[j], charset, ContentType.VALUE));
                }
                val = new ArrayValue(newTokens);
             }
             else
             {
-               val = StringValue.get(decoder.decode(plain, charset, Decoder.ContentType.VALUE));
+               val = StringValue.get(decoder.decode(plain, charset, ContentType.VALUE));
             }
          }
 

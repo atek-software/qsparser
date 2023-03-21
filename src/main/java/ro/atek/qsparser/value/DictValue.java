@@ -1,8 +1,8 @@
 package ro.atek.qsparser.value;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import ro.atek.qsparser.StringifyOptions;
+
+import java.util.*;
 
 /**
  * Compound value type which allows representing data in a dictionary
@@ -13,10 +13,45 @@ import java.util.Map;
  * is highly discouraged to use this as mutable, as one such instance can
  * be nested into other compound values as well.
  */
-public final class DictValue
+public class DictValue
 extends LinkedHashMap<DictKey, Value>
 implements Value
 {
+   /**
+    * Represent the value as a query string. This is different from
+    * {@code toString} in the sense that the result can be parsed
+    * back as this value.
+    *
+    * @return   A query string representation of this value.
+    */
+   @Override
+   public List<QueryStringEntry> stringify(String key, StringifyOptions options)
+   {
+      if (key == null)
+      {
+         return Collections.singletonList(new QueryStringEntry(null, options.dictInArrayReplacement));
+      }
+      List<QueryStringEntry> values = new ArrayList<>(this.size());
+      for (Map.Entry<DictKey, Value> entry : this.entrySet())
+      {
+         if (options.skipNulls && (entry.getValue() == null || entry.getValue().getType() == ValueType.NULL))
+         {
+            continue;
+         }
+
+         if (key.isEmpty())
+         {
+            values.addAll(entry.getValue().stringify(entry.getKey().toString(), options));
+         }
+         else
+         {
+            String newKey = key + (options.allowDots ? "." + entry.getKey() : "[" + entry.getKey() + "]");
+            values.addAll(entry.getValue().stringify(newKey, options));
+         }
+      }
+      return values;
+   }
+
    /**
     * Merge implementation. This is a complex logic,
     * allowing the merging of a dictionary value with any kind
@@ -165,7 +200,7 @@ implements Value
    @Override
    public String toString()
    {
-      return toString(0);
+      return toString(0, false);
    }
 
    /**
@@ -176,10 +211,11 @@ implements Value
     *
     * @return  An indented string representation of a dictionary
     */
-   public String toString(int ident)
+   public String toString(int ident, boolean inline)
    {
       StringBuilder sb = new StringBuilder();
-      sb.append("{\n");
+      String nl = inline ? "" : "\n";
+      sb.append("{").append(nl);
       ident += 3;
       for (Map.Entry<DictKey, Value> entry : entrySet())
       {
@@ -191,19 +227,19 @@ implements Value
          if (entry.getValue() == null)
          {
             // don't use "null"; the NullValue is represented as "null"
-            sb.append("NaN\n");
+            sb.append("NaN").append(nl);
             continue;
          }
          if (entry.getValue().getType() == ValueType.DICT)
          {
             // make it aware of ident
-            sb.append(((DictValue) entry.getValue()).toString(ident));
+            sb.append(((DictValue) entry.getValue()).toString(ident, inline));
          }
          else
          {
             // !! the very nested dictionaries are not aware of the ident
             sb.append(entry.getValue());
-            sb.append("\n");
+            sb.append(nl);
          }
       }
       ident -= 3;
@@ -211,7 +247,7 @@ implements Value
       {
          sb.append(" ");
       }
-      sb.append("}\n");
+      sb.append("}").append(nl);
       return sb.toString();
    }
 

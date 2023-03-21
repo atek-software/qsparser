@@ -1,5 +1,10 @@
 package ro.atek.qsparser.value;
 
+import ro.atek.qsparser.StringifyOptions;
+
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Special type of value which denotes a boolean representation.
  * This kind of value is rare as it appears only when merging
@@ -24,17 +29,6 @@ implements Value
    }
 
    /**
-    * Retrieve the value type of this.
-    *
-    * @return   The boolean type.
-    */
-   @Override
-   public ValueType getType()
-   {
-      return ValueType.BOOL;
-   }
-
-   /**
     * Retrieve the internal boolean representation
     *
     * @return   {@code true} if this is the true boolean representation
@@ -43,6 +37,30 @@ implements Value
    public boolean intern()
    {
       return this == TRUE;
+   }
+
+   /**
+    * Represent the value as a query string. This is different from
+    * {@code toString} in the sense that the result can be parsed
+    * back as this value.
+    *
+    * @return   A query string representation of this value.
+    */
+   @Override
+   public List<QueryStringEntry> stringify(String key, StringifyOptions options)
+   {
+      return Collections.singletonList(new QueryStringEntry(key, intern() ? "true" : "false"));
+   }
+
+   /**
+    * Retrieve the value type of this.
+    *
+    * @return   The boolean type.
+    */
+   @Override
+   public ValueType getType()
+   {
+      return ValueType.BOOL;
    }
 
    /**

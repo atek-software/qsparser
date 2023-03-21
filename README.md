@@ -47,6 +47,27 @@ A parser instance can be customized to use certain parsing options:
 * Adapt for specific query strings in regard to the leading prefix (?) or the delimiter (&)
 * Parse commas inside values and generate arrays
 
+## Builder
+QsParser has a custom set of structures to represent a query string. A vital functionality when it comes down to the generation of query strings is the QS Builder. This ensure that a fully compatible query string is generated based on an input representation.
+
+```java
+QueryStringBuilder builder = new QueryStringBuilder();
+StringValue address = StringValue.get("address");
+StringValue city = StringValue.get("city");
+StringValue ny = StringValue.get("New York");
+String queryString = builder.stringify(new DictValue().append(address, new DictValue().append(city, ny)));
+System.out.println(queryString);
+/* address%5Bcity%5D=New+York */
+```
+
+### :star: Features
+The QS Builder is able to stringify any structure represented through the provided model. Therefore, the builder is able to generate a string construct which can be parsed back into a structure equal to the initial input. 
+* Specify the format in which the arrays should convert: `names=John&names=Jack` or `names[0]=John&names[1]=Jack` or `names[]=John&names[]=Jack`
+* Compress arrays and use comma separator: `names=John,Jack`
+* Represent the members of dictionaries using square brackets or dots: `person.name=John&person.birth.year=2000`
+* Allow nesting of dictionaries and arrays: `person.name=John&person.year[0]=2000&person.year[1].value=2012`
+* Encode query string and support custom encodings: `filter%5B0%5D%5B%5D=John`
+
 ## Download
 Download from the [GitHub Packages](https://github.com/llalexandru00/qsparser/packages/) section or depend through Maven or Gradle. 
 ```xml
