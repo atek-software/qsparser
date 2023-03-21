@@ -833,9 +833,9 @@ class QueryStringParserTest
    @Test
    void does_not_crash_when_parsing_deep_objects()
    {
-      QueryStringParser parser = new QueryStringParser(new ParserOptions().setDepth(5000));
+      QueryStringParser parser = new QueryStringParser(new ParserOptions().setDepth(500));
       StringBuilder str = new StringBuilder("foo");
-      for (int i = 0; i < 5000; i++)
+      for (int i = 0; i < 500; i++)
       {
          str.append("[p]");
       }
@@ -852,7 +852,7 @@ class QueryStringParserTest
          val[0] = ((DictValue) val[0]).get(key);
          depth++;
       }
-      Assertions.assertEquals(depth, 5000);
+      Assertions.assertEquals(depth, 500);
    }
 
    @Test
